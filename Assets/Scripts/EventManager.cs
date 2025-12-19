@@ -124,9 +124,12 @@ public class EventManager : MonoBehaviour
         );
 
         currentFloor = (int)startingPoint;
+
+        //---- TEST TRIAL GENERATION
         //TestAlignedTrials();
         //TestMisalignedTrials();
-        TestSemiAlignedTrials();
+        //TestSemiAlignedTrials();
+        TestSemiMisalignedTrials();
     }
 
     // Update is called once per frame
@@ -541,7 +544,7 @@ public class EventManager : MonoBehaviour
             facingSecondBlock.RemoveAt(0);
 
 
-        // ---- ALIGNED TRIALS USING FIRST FLOOR ----
+        // ---- TRIALS FIRST BLOCK ----
         foreach (GameObject facing in facingFirstBlock)
             {
                 List<GameObject> possibleTargets = new List<GameObject>(firstBlock);
@@ -558,7 +561,7 @@ public class EventManager : MonoBehaviour
                 }
             }
 
-        // ---- ALIGNED TRIALS USING SECOND FLOOR ----
+        // ---- TRIALS SECOND BLOCK ----
         foreach (GameObject facing in facingSecondBlock)
         {
             List<GameObject> possibleTargets = new List<GameObject>(secondBlock);
@@ -622,7 +625,7 @@ public class EventManager : MonoBehaviour
             facingFirstBlock.RemoveAt(0);
 
 
-        // ---- ALIGNED TRIALS USING FIRST FLOOR ----
+        // ---- TRIALS FIRST BLOCK ----
         foreach (GameObject facing in facingFirstBlock)
         {
             List<GameObject> possibleTargets = new List<GameObject>(firstBlock);
@@ -639,7 +642,7 @@ public class EventManager : MonoBehaviour
             }
         }
 
-        // ---- ALIGNED TRIALS USING SECOND FLOOR ----
+        // ---- TRIALS SECOND BLOCK ----
         foreach (GameObject facing in facingSecondBlock)
         {
             List<GameObject> possibleTargets = new List<GameObject>(secondBlock);
@@ -703,7 +706,7 @@ public class EventManager : MonoBehaviour
             facingSecondBlock.RemoveAt(0);
 
 
-        // ---- ALIGNED TRIALS USING FIRST FLOOR ----
+        // ---- TRIALS FIRST BLOCK ----
         foreach (GameObject facing in facingFirstBlock)
         {
             List<GameObject> possibleTargets = new List<GameObject>(firstBlock);
@@ -720,7 +723,7 @@ public class EventManager : MonoBehaviour
             }
         }
 
-        // ---- ALIGNED TRIALS USING SECOND FLOOR ----
+        // ---- TRIALS SECOND BLOCK ----
         foreach (GameObject facing in facingSecondBlock)
         {
             List<GameObject> possibleTargets = new List<GameObject>(secondBlock);
@@ -767,24 +770,23 @@ public class EventManager : MonoBehaviour
         }
 
         // Decide order of floors based on startingPoint (targetobjects)
-        List<GameObject> firstBlock = startingPoint == 0 ? topFloorObjects : bottomFloorObjects;
-        List<GameObject> secondBlock = startingPoint == 0 ? bottomFloorObjects : topFloorObjects;
+        List<GameObject> firstBlock = startingPoint == 0 ? bottomFloorObjects : topFloorObjects;
+        List<GameObject> secondBlock = startingPoint == 0 ? topFloorObjects : bottomFloorObjects;
 
         // --- Create lists of valid facing objects (exclude LD object) ---
         List<GameObject> facingFirstBlock = new List<GameObject>(secondBlock);
         List<GameObject> facingSecondBlock = new List<GameObject>(firstBlock);
 
         if (learningDirection == 0 && startingPoint == 0)
-            facingSecondBlock.RemoveAt(0); // LD object removed only as facing
+            facingFirstBlock.RemoveAt(0); // LD object removed only as facing
         else if (learningDirection == 0 && startingPoint == 1)
-            facingFirstBlock.RemoveAt(0);
-        else if (learningDirection == 225 && startingPoint == 0)
-            facingFirstBlock.RemoveAt(0);
-        else if (learningDirection == 225 && startingPoint == 1)
             facingSecondBlock.RemoveAt(0);
+        else if (learningDirection == 225 && startingPoint == 0)
+            facingSecondBlock.RemoveAt(0);
+        else if (learningDirection == 225 && startingPoint == 1)
+            facingFirstBlock.RemoveAt(0);
 
-
-        // ---- ALIGNED TRIALS USING FIRST FLOOR ----
+        // ---- TRIALS FIRST BLOCK ----
         foreach (GameObject facing in facingFirstBlock)
         {
             List<GameObject> possibleTargets = new List<GameObject>(firstBlock);
@@ -795,13 +797,13 @@ public class EventManager : MonoBehaviour
             {
                 // Pick next target in list, cycle if needed
                 GameObject target = possibleTargets[targetIndex];
-                trialsFirst.Add(new ExperimentalTrial(facing, target, "Semi_Aligned"));
+                trialsFirst.Add(new ExperimentalTrial(facing, target, "Semi_Misaligned"));
 
                 targetIndex = (targetIndex + 1) % possibleTargets.Count;
             }
         }
 
-        // ---- ALIGNED TRIALS USING SECOND FLOOR ----
+        // ---- TRIALS SECOND BLOCK ----
         foreach (GameObject facing in facingSecondBlock)
         {
             List<GameObject> possibleTargets = new List<GameObject>(secondBlock);
@@ -811,7 +813,7 @@ public class EventManager : MonoBehaviour
             for (int r = 0; r < repeatsPerFacing; r++)
             {
                 GameObject target = possibleTargets[targetIndex];
-                trialsSecond.Add(new ExperimentalTrial(facing, target, "Semi_Aligned"));
+                trialsSecond.Add(new ExperimentalTrial(facing, target, "Semi_Misaligned"));
 
                 targetIndex = (targetIndex + 1) % possibleTargets.Count;
             }
@@ -1209,6 +1211,16 @@ public class EventManager : MonoBehaviour
         for (int i = 0; i < semialignedTrials.Count; i++)
         {
             ExperimentalTrial t = semialignedTrials[i];
+            Debug.Log($"Trial {i + 1}: Facing {t.facingObject.name} -> Pointing {t.pointingObject.name} (Type: {t.trialType})");
+        }
+    }
+    private void TestSemiMisalignedTrials()
+    {
+        List<ExperimentalTrial> semiMisalignedTrials = GenerateExperimentalSemiMisalignedTrials(practiceObjects);
+
+        for (int i = 0; i < semiMisalignedTrials.Count; i++)
+        {
+            ExperimentalTrial t = semiMisalignedTrials[i];
             Debug.Log($"Trial {i + 1}: Facing {t.facingObject.name} -> Pointing {t.pointingObject.name} (Type: {t.trialType})");
         }
     }
