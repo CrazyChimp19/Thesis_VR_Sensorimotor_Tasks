@@ -185,6 +185,7 @@ public class EventManager : MonoBehaviour
             }
         }
 
+        //==== EXPERIMENTAL PHASE ====\\
         if (stage == 7)
         {
             panelTestTrialInstructor.SetActive(false);
@@ -352,7 +353,7 @@ public class EventManager : MonoBehaviour
             // Trigger teleport
             TeleportToOtherFloor();
 
-            // Do not move the panel yet — it will move after teleport
+            // Do not move the panel yet, it will move after teleport
         }
         else
         {
@@ -371,75 +372,71 @@ public class EventManager : MonoBehaviour
         AddStage(); // advance to the next stage of the experiment
     }
 
+    
+    /// <summary>
+    /// Checks whether the participant is pointing correctly from the facing object (Object A)
+    /// toward the pointing target (Object B) using the VR hand.
+    /// Returns true if both horizontal and vertical errors are within tolerance.
+    /// </summary>
     private bool IsPointingCorrect(PracticeTrial trial)
     {
-        if (trial == null || trial.pointingObject == null || pointingHand == null)
+        // --- Validate input ---
+        if (trial == null || trial.pointingObject == null || trial.facingObject == null || pointingHand == null)
             return false;
 
+        // --- Find hand pivots ---
         Transform handStart = pointingHand.Find("handStartPivot");
         Transform handEnd = pointingHand.Find("handEndPivot");
+        if (handStart == null || handEnd == null) return false;
 
-        if (handStart == null || handEnd == null)
-        {
-            Debug.LogError("handStartPivot or handEndPivot missing!");
-            return false;
-        }
-
-        // ---- Standing position (participant) ----
+        // --- Participant position ---
         Vector3 participantPos = xrCamera.position;
 
-        // ---- Correct direction ----
-        Vector3 correctDir =
-            trial.pointingObject.transform.position - participantPos;
+        // --- Compute vectors ---
+        Vector3 vecPA = trial.facingObject.transform.position - participantPos;   // Participant â†’ Object A (facing)
+        Vector3 vecPB = trial.pointingObject.transform.position - participantPos; // Participant â†’ Object B (target)
+        Vector3 vecPD = handEnd.position - handStart.position;                    // Hand pointing direction
 
-        // ---- Pointing direction ----
-        Vector3 pointingDir =
-            handEnd.position - handStart.position;
+        // --- Horizontal error ---
+        // Project vectors onto horizontal plane (XZ), ignoring vertical component
+        Vector3 vecPA_H = new Vector3(vecPA.x, 0f, vecPA.z).normalized;
+        Vector3 vecPB_H = new Vector3(vecPB.x, 0f, vecPB.z).normalized;
+        Vector3 vecPD_H = new Vector3(vecPD.x, 0f, vecPD.z).normalized;
 
-        // ---- Horizontal angles ----
-        float correctHoriz = CalculateHorizontalSignedAngle(correctDir);
-        float pointingHoriz = CalculateHorizontalSignedAngle(pointingDir);
+        // Compute angles relative to facing object
+        float angleCorrectHoriz = Vector3.SignedAngle(vecPA_H, vecPB_H, Vector3.up);
+        float anglePointingHoriz = Vector3.SignedAngle(vecPA_H, vecPD_H, Vector3.up);
 
-        float horizontalError =
-            Mathf.DeltaAngle(correctHoriz, pointingHoriz);
-        float horizontalAbs = Mathf.Abs(horizontalError);
+        // Horizontal error = pointing - correct
+        float horizontalError = anglePointingHoriz - angleCorrectHoriz;
 
-        // ---- Vertical angles ----
-        float correctVert = CalculateVerticalSignedAngle(correctDir);
-        float pointingVert = CalculateVerticalSignedAngle(pointingDir);
+        // Wrap horizontal error into -180 to 180 range to avoid crazy values 
+        horizontalError = Mathf.DeltaAngle(0f, horizontalError);
 
-        float verticalError = pointingVert - correctVert;
-        float verticalAbs = Mathf.Abs(verticalError);
+        // --- Vertical error ---
+        // Define a plane perpendicular to facing object for vertical measurement
+        Vector3 right = Vector3.Cross(Vector3.up, vecPA).normalized;  // Right relative to facing
+        Vector3 up = Vector3.Cross(vecPA, right).normalized;          // Up perpendicular to facing
 
-        // ---- Debug ----
-        Debug.Log(
-            $"Horiz error: {horizontalError:F2}°, Vert error: {verticalError:F2}°"
-        );
+        // How high or low the target is relative to facing object
+        float angleCorrectVert = Mathf.Asin(Vector3.Dot(vecPB.normalized, up)) * Mathf.Rad2Deg;
 
+        // How high or low the hand is pointing relative to facing object
+        float anglePointingVert = Mathf.Asin(Vector3.Dot(vecPD.normalized, up)) * Mathf.Rad2Deg;
+
+        // Difference between hand height and correct height
+        float verticalError = anglePointingVert - angleCorrectVert;
+
+        // Store for feedback/UI 
         lastHorizontalError = horizontalError;
         lastVerticalError = verticalError;
 
-        // ---- Validation ----
-        return horizontalAbs <= pointingToleranceDegrees
-            && verticalAbs <= pointingToleranceDegrees;
-    }
+        // Debug output
+        Debug.Log($"Horiz error: {horizontalError:F2}Â°, Vert error: {verticalError:F2}Â°");
 
-
-    // 0–360 signed horizontal angle (Y-up)
-    private float CalculateHorizontalSignedAngle(Vector3 dir)
-    {
-        dir.y = 0f;
-        dir.Normalize();
-
-        float angle = Mathf.Atan2(dir.z, dir.x) * Mathf.Rad2Deg;
-        return angle < 0 ? angle + 360f : angle;
-    }
-
-    // ?90 to +90 vertical angle
-    private float CalculateVerticalSignedAngle(Vector3 dir)
-    {
-        dir.Normalize();
-        return Mathf.Asin(dir.y) * Mathf.Rad2Deg;
+        // Return true if within tolerance
+        return Mathf.Abs(horizontalError) <= pointingToleranceDegrees
+            && Mathf.Abs(verticalError) <= pointingToleranceDegrees;
     }
 
     private void ShowFeedback(bool correct)
@@ -451,8 +448,8 @@ public class EventManager : MonoBehaviour
 
         feedbackText.text =
             $"{result}\n" +
-            $"Horizontal error: {lastHorizontalError:F1}°\n" +
-            $"Vertical error: {lastVerticalError:F1}°";
+            $"Horizontal error: {lastHorizontalError:F1}ï¿½\n" +
+            $"Vertical error: {lastVerticalError:F1}ï¿½";
 
         StartCoroutine(HideFeedbackAfterDelay());
     }
