@@ -34,6 +34,19 @@ public class EventManager : MonoBehaviour
     [SerializeField] private float distanceInFrontFace = 1f; // distance in front of the anchor
     [SerializeField] private float heightOffsetFace = 1.5f; // Adjust in Inspector
 
+    [Header("Vertical Floor Movement")]
+    [SerializeField] private Transform xrOrigin; // XR Origin (Action-based or Device-based)
+    [SerializeField] private ActionBasedSnapTurnProvider snapTurnProvider;
+    [SerializeField] private float bottomFloorY = 0.01000011f;
+    [SerializeField] private float topFloorY = 5.02f;
+    [SerializeField] private float liftDuration = 1.5f; // seconds
+    [SerializeField] private bool forceLearningDirectionDuringLift = true;
+    [SerializeField] private Material transparentFloorMaterial;
+    [SerializeField] private float liftDelayAfterRotation = 2f;
+
+    private Dictionary<Renderer, Material[]> originalFloorMaterials = new();
+    private bool isMoving = false; // tracks if the lift is running
+
     [Header("Practice Trials")]
     [SerializeField] private List<GameObject> practiceObjects; // 8 objects in Inspector
     [SerializeField] private float holdDuration = 1f;
@@ -45,6 +58,11 @@ public class EventManager : MonoBehaviour
     private int currentPracticeTrialIndex = 0;
     private bool practiceRunning = false;
     private float holdTimer = 0f;
+    private GameObject pendingPracticePanel = null;
+
+    [Header("Experimental Trials")]
+    [SerializeField] private string object0LD; // Name of Object in 0 LD
+    [SerializeField] private string object225LD; // Name of Object in 225 LD
 
     [Header("Feedback UI")]
     [SerializeField] private TMP_Text feedbackText;
@@ -77,6 +95,20 @@ public class EventManager : MonoBehaviour
         }
     }
 
+    public class ExperimentalTrial
+    {
+        public GameObject facingObject;
+        public GameObject pointingObject;
+        public string trialType;
+
+        public ExperimentalTrial(GameObject facing, GameObject pointing, string type)
+        {
+            facingObject = facing;
+            pointingObject = pointing;
+            trialType = type;
+        }
+    }
+
     // Start is called before the first frame update
     void Awake()
     {
@@ -92,6 +124,9 @@ public class EventManager : MonoBehaviour
         );
 
         currentFloor = (int)startingPoint;
+        //TestAlignedTrials();
+        //TestMisalignedTrials();
+        TestSemiAlignedTrials();
     }
 
     // Update is called once per frame
@@ -121,6 +156,15 @@ public class EventManager : MonoBehaviour
             }
         }
 
+        if (stage == 3 && !teleportPanelSpawned)
+        {
+            if (!isMoving)
+            {
+                SpawnPanelInFrontCamera(panelLearningPhase2);
+                teleportPanelSpawned = true;
+            }
+        }
+
         if (stage == 4 && !teleportPanelSpawned)
         {
             if (rightPrimaryButton.IsPressed())
@@ -140,6 +184,15 @@ public class EventManager : MonoBehaviour
             }
         }
 
+        if (stage == 5 && !teleportPanelSpawned)
+        {
+            if (!isMoving)
+            {
+                SpawnPanelInFrontCamera(panelTestTrials);
+                teleportPanelSpawned = true;
+            }
+        }
+
         //==== PRACTICE TRIAL PHASE ===\\
         // Stage 6 handles the test trials
         if (stage == 6)
@@ -153,8 +206,15 @@ public class EventManager : MonoBehaviour
             }
             else
             {
+                // ---- Spawn pending panel after lift ----
+                if (pendingPracticePanel != null && !isMoving)
+                {
+                    MovePanelInFrontCamera(pendingPracticePanel);
+                    pendingPracticePanel = null;
+                }
+
                 // Only process input if there are remaining trials
-                if (currentPracticeTrialIndex < practiceTrials.Count)
+                if (currentPracticeTrialIndex < practiceTrials.Count && !isMoving)
                 {
                     PracticeTrial currentTrial = practiceTrials[currentPracticeTrialIndex];
 
@@ -184,6 +244,7 @@ public class EventManager : MonoBehaviour
                 }
             }
         }
+
 
         //==== EXPERIMENTAL PHASE ====\\
         if (stage == 7)
@@ -230,24 +291,6 @@ public class EventManager : MonoBehaviour
      
         TeleportToAnchor(targetAnchor);
         SpawnPanelInFrontAnchor(targetAnchor, panel);
-        AddStage();
-    }
-
-    public void TeleportPlayerToNextFloor()
-    {
-        TeleportationAnchor targetAnchor = null;
-
-        if (startingPoint == 1)
-        {
-            targetAnchor = Bottom_LearningDirection;
-        }
-        else if (startingPoint == 0)
-        {
-            targetAnchor = Top_LearningDirection;
-        }
-
-        TeleportToAnchor(targetAnchor);
-        SpawnPanelInFrontAnchor(targetAnchor, panelLearningPhase2);
         AddStage();
     }
 
@@ -342,18 +385,10 @@ public class EventManager : MonoBehaviour
         // After the first 8 trials, teleport to the other floor
         if (currentPracticeTrialIndex == 8)
         {
-            // Subscribe to teleport completion with a local lambda
-            teleportationProvider.endLocomotion += (locomotion) =>
-            {
-                MovePanelInFrontCamera(panelTestTrialInstructor);
-                // Unsubscribe after teleport completes
-                teleportationProvider.endLocomotion -= (locomotion) => { };
-            };
+            int targetFloor = currentFloor == 0 ? 1 : 0;
 
-            // Trigger teleport
-            TeleportToOtherFloor();
-
-            // Do not move the panel yet, it will move after teleport
+            // Start vertical movement and pass the panel to spawn after lift
+            StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
         }
         else
         {
@@ -364,6 +399,7 @@ public class EventManager : MonoBehaviour
         PracticeTrial trial = practiceTrials[currentPracticeTrialIndex];
         testTrialText.text = $"Face {trial.facingObject.name}, point to {trial.pointingObject.name}";
     }
+
 
     private void EndPracticeSession()
     {
@@ -467,19 +503,444 @@ public class EventManager : MonoBehaviour
         TeleportToAnchor(startAnchor);
     }
 
-    private void TeleportToOtherFloor()
+    //==== EXPERIMENTAL PHASE ====\\
+    private List<ExperimentalTrial> GenerateExperimentalAlignedTrials(List<GameObject> allObjects)
     {
-        TeleportationAnchor otherAnchor = startingPoint == 0 ? Top_LearningDirection : Bottom_LearningDirection;
-        TeleportToAnchor(otherAnchor);
+        List<GameObject> bottomFloorObjects = new List<GameObject>();
+        List<GameObject> topFloorObjects = new List<GameObject>();
 
-        // Update current floor after teleport
-        currentFloor = currentFloor == 0 ? 1 : 0;
+        List<ExperimentalTrial> trialsFirst = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> trialsSecond = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> finalTrials = new List<ExperimentalTrial>();
+
+        int repeatsPerFacing = 3;
+
+        // Separate objects by tag
+        foreach (GameObject obj in allObjects)
+        {
+            if (obj.CompareTag("Bottom")) bottomFloorObjects.Add(obj);
+            else if (obj.CompareTag("Top")) topFloorObjects.Add(obj);
+            else Debug.LogWarning("Object has no floor tag: " + obj.name);
+        }
+
+        // Decide order of floors based on startingPoint
+        List<GameObject> firstBlock = startingPoint == 0 ? bottomFloorObjects : topFloorObjects;
+        List<GameObject> secondBlock = startingPoint == 0 ? topFloorObjects : bottomFloorObjects;
+
+        // --- Create lists of valid facing objects (exclude LD object) ---
+        List<GameObject> facingFirstBlock = new List<GameObject>(firstBlock);
+        List<GameObject> facingSecondBlock = new List<GameObject>(secondBlock);
+
+        if (learningDirection == 0 && startingPoint == 0)
+            facingSecondBlock.RemoveAt(0); // LD object removed only as facing
+        else if (learningDirection == 0 && startingPoint == 1)
+            facingFirstBlock.RemoveAt(0);
+        else if (learningDirection == 225 && startingPoint == 0)
+            facingFirstBlock.RemoveAt(0);
+        else if (learningDirection == 225 && startingPoint == 1)
+            facingSecondBlock.RemoveAt(0);
+
+
+        // ---- ALIGNED TRIALS USING FIRST FLOOR ----
+        foreach (GameObject facing in facingFirstBlock)
+            {
+                List<GameObject> possibleTargets = new List<GameObject>(firstBlock);
+                possibleTargets.Remove(facing); // cannot point to itself
+
+                int targetIndex = 0;
+                for (int r = 0; r < repeatsPerFacing; r++)
+                {
+                    // Pick next target in list, cycle if needed
+                    GameObject target = possibleTargets[targetIndex];
+                    trialsFirst.Add(new ExperimentalTrial(facing, target, "Aligned"));
+
+                    targetIndex = (targetIndex + 1) % possibleTargets.Count;
+                }
+            }
+
+        // ---- ALIGNED TRIALS USING SECOND FLOOR ----
+        foreach (GameObject facing in facingSecondBlock)
+        {
+            List<GameObject> possibleTargets = new List<GameObject>(secondBlock);
+            possibleTargets.Remove(facing); // cannot point to itself
+
+            int targetIndex = 0;
+            for (int r = 0; r < repeatsPerFacing; r++)
+            {
+                GameObject target = possibleTargets[targetIndex];
+                trialsSecond.Add(new ExperimentalTrial(facing, target, "Aligned"));
+
+                targetIndex = (targetIndex + 1) % possibleTargets.Count;
+            }
+        }
+
+        // Shuffle trials
+        ShuffleTrials(trialsFirst);
+        ShuffleTrials(trialsSecond);
+
+        // Add all trials to final list
+        finalTrials.AddRange(trialsFirst);
+        finalTrials.AddRange(trialsSecond);
+
+        return finalTrials;
     }
 
-    //==== EXPERIMENTAL PHASE ====\\
+    private List<ExperimentalTrial> GenerateExperimentalMisalignedTrials(List<GameObject> allObjects)
+    {
+        List<GameObject> bottomFloorObjects = new List<GameObject>();
+        List<GameObject> topFloorObjects = new List<GameObject>();
+
+        List<ExperimentalTrial> trialsFirst = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> trialsSecond = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> finalTrials = new List<ExperimentalTrial>();
+
+        int repeatsPerFacing = 3;
+
+        // Separate objects by tag
+        foreach (GameObject obj in allObjects)
+        {
+            if (obj.CompareTag("Bottom")) bottomFloorObjects.Add(obj);
+            else if (obj.CompareTag("Top")) topFloorObjects.Add(obj);
+            else Debug.LogWarning("Object has no floor tag: " + obj.name);
+        }
+
+        // Decide order of floors based on startingPoint
+        List<GameObject> firstBlock = startingPoint == 0 ? topFloorObjects : bottomFloorObjects;
+        List<GameObject> secondBlock = startingPoint == 0 ? bottomFloorObjects : topFloorObjects;
+
+        // --- Create lists of valid facing objects (exclude LD object) ---
+        List<GameObject> facingFirstBlock = new List<GameObject>(firstBlock);
+        List<GameObject> facingSecondBlock = new List<GameObject>(secondBlock);
+
+        if (learningDirection == 0 && startingPoint == 0)
+            facingFirstBlock.RemoveAt(0); // LD object removed only as facing
+        else if (learningDirection == 0 && startingPoint == 1)
+            facingSecondBlock.RemoveAt(0);
+        else if (learningDirection == 225 && startingPoint == 0)
+            facingSecondBlock.RemoveAt(0);
+        else if (learningDirection == 225 && startingPoint == 1)
+            facingFirstBlock.RemoveAt(0);
+
+
+        // ---- ALIGNED TRIALS USING FIRST FLOOR ----
+        foreach (GameObject facing in facingFirstBlock)
+        {
+            List<GameObject> possibleTargets = new List<GameObject>(firstBlock);
+            possibleTargets.Remove(facing); // cannot point to itself
+
+            int targetIndex = 0;
+            for (int r = 0; r < repeatsPerFacing; r++)
+            {
+                // Pick next target in list, cycle if needed
+                GameObject target = possibleTargets[targetIndex];
+                trialsFirst.Add(new ExperimentalTrial(facing, target, "Misaligned"));
+
+                targetIndex = (targetIndex + 1) % possibleTargets.Count;
+            }
+        }
+
+        // ---- ALIGNED TRIALS USING SECOND FLOOR ----
+        foreach (GameObject facing in facingSecondBlock)
+        {
+            List<GameObject> possibleTargets = new List<GameObject>(secondBlock);
+            possibleTargets.Remove(facing); // cannot point to itself
+
+            int targetIndex = 0;
+            for (int r = 0; r < repeatsPerFacing; r++)
+            {
+                GameObject target = possibleTargets[targetIndex];
+                trialsSecond.Add(new ExperimentalTrial(facing, target, "Misaligned"));
+
+                targetIndex = (targetIndex + 1) % possibleTargets.Count;
+            }
+        }
+
+        // Shuffle trials
+        ShuffleTrials(trialsFirst);
+        ShuffleTrials(trialsSecond);
+
+        // Add all trials to final list
+        finalTrials.AddRange(trialsFirst);
+        finalTrials.AddRange(trialsSecond);
+
+        return finalTrials;
+    }
+
+    private List<ExperimentalTrial> GenerateExperimentalSemiAlignedTrials(List<GameObject> allObjects)
+    {
+        List<GameObject> bottomFloorObjects = new List<GameObject>();
+        List<GameObject> topFloorObjects = new List<GameObject>();
+
+        List<ExperimentalTrial> trialsFirst = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> trialsSecond = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> finalTrials = new List<ExperimentalTrial>();
+
+        int repeatsPerFacing = 4;
+
+        // Separate objects by tag
+        foreach (GameObject obj in allObjects)
+        {
+            if (obj.CompareTag("Bottom")) bottomFloorObjects.Add(obj);
+            else if (obj.CompareTag("Top")) topFloorObjects.Add(obj);
+            else Debug.LogWarning("Object has no floor tag: " + obj.name);
+        }
+
+        // Decide order of floors based on startingPoint (targetobjects)
+        List<GameObject> firstBlock = startingPoint == 0 ? topFloorObjects : bottomFloorObjects;
+        List<GameObject> secondBlock = startingPoint == 0 ? bottomFloorObjects : topFloorObjects;
+
+        // --- Create lists of valid facing objects (exclude LD object) ---
+        List<GameObject> facingFirstBlock = new List<GameObject>(secondBlock);
+        List<GameObject> facingSecondBlock = new List<GameObject>(firstBlock);
+
+        if (learningDirection == 0 && startingPoint == 0)
+            facingSecondBlock.RemoveAt(0); // LD object removed only as facing
+        else if (learningDirection == 0 && startingPoint == 1)
+            facingFirstBlock.RemoveAt(0);
+        else if (learningDirection == 225 && startingPoint == 0)
+            facingFirstBlock.RemoveAt(0);
+        else if (learningDirection == 225 && startingPoint == 1)
+            facingSecondBlock.RemoveAt(0);
+
+
+        // ---- ALIGNED TRIALS USING FIRST FLOOR ----
+        foreach (GameObject facing in facingFirstBlock)
+        {
+            List<GameObject> possibleTargets = new List<GameObject>(firstBlock);
+            possibleTargets.Remove(facing); // cannot point to itself
+
+            int targetIndex = 0;
+            for (int r = 0; r < repeatsPerFacing; r++)
+            {
+                // Pick next target in list, cycle if needed
+                GameObject target = possibleTargets[targetIndex];
+                trialsFirst.Add(new ExperimentalTrial(facing, target, "Semi_Aligned"));
+
+                targetIndex = (targetIndex + 1) % possibleTargets.Count;
+            }
+        }
+
+        // ---- ALIGNED TRIALS USING SECOND FLOOR ----
+        foreach (GameObject facing in facingSecondBlock)
+        {
+            List<GameObject> possibleTargets = new List<GameObject>(secondBlock);
+            possibleTargets.Remove(facing); // cannot point to itself
+
+            int targetIndex = 0;
+            for (int r = 0; r < repeatsPerFacing; r++)
+            {
+                GameObject target = possibleTargets[targetIndex];
+                trialsSecond.Add(new ExperimentalTrial(facing, target, "Semi_Aligned"));
+
+                targetIndex = (targetIndex + 1) % possibleTargets.Count;
+            }
+        }
+
+        // Shuffle trials
+        ShuffleTrials(trialsFirst);
+        ShuffleTrials(trialsSecond);
+
+        // Add all trials to final list
+        finalTrials.AddRange(trialsFirst);
+        finalTrials.AddRange(trialsSecond);
+
+        return finalTrials;
+    }
+
+    private List<ExperimentalTrial> GenerateExperimentalSemiMisalignedTrials(List<GameObject> allObjects)
+    {
+        List<GameObject> bottomFloorObjects = new List<GameObject>();
+        List<GameObject> topFloorObjects = new List<GameObject>();
+
+        List<ExperimentalTrial> trialsFirst = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> trialsSecond = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> finalTrials = new List<ExperimentalTrial>();
+
+        int repeatsPerFacing = 4;
+
+        // Separate objects by tag
+        foreach (GameObject obj in allObjects)
+        {
+            if (obj.CompareTag("Bottom")) bottomFloorObjects.Add(obj);
+            else if (obj.CompareTag("Top")) topFloorObjects.Add(obj);
+            else Debug.LogWarning("Object has no floor tag: " + obj.name);
+        }
+
+        // Decide order of floors based on startingPoint (targetobjects)
+        List<GameObject> firstBlock = startingPoint == 0 ? topFloorObjects : bottomFloorObjects;
+        List<GameObject> secondBlock = startingPoint == 0 ? bottomFloorObjects : topFloorObjects;
+
+        // --- Create lists of valid facing objects (exclude LD object) ---
+        List<GameObject> facingFirstBlock = new List<GameObject>(secondBlock);
+        List<GameObject> facingSecondBlock = new List<GameObject>(firstBlock);
+
+        if (learningDirection == 0 && startingPoint == 0)
+            facingSecondBlock.RemoveAt(0); // LD object removed only as facing
+        else if (learningDirection == 0 && startingPoint == 1)
+            facingFirstBlock.RemoveAt(0);
+        else if (learningDirection == 225 && startingPoint == 0)
+            facingFirstBlock.RemoveAt(0);
+        else if (learningDirection == 225 && startingPoint == 1)
+            facingSecondBlock.RemoveAt(0);
+
+
+        // ---- ALIGNED TRIALS USING FIRST FLOOR ----
+        foreach (GameObject facing in facingFirstBlock)
+        {
+            List<GameObject> possibleTargets = new List<GameObject>(firstBlock);
+            possibleTargets.Remove(facing); // cannot point to itself
+
+            int targetIndex = 0;
+            for (int r = 0; r < repeatsPerFacing; r++)
+            {
+                // Pick next target in list, cycle if needed
+                GameObject target = possibleTargets[targetIndex];
+                trialsFirst.Add(new ExperimentalTrial(facing, target, "Semi_Aligned"));
+
+                targetIndex = (targetIndex + 1) % possibleTargets.Count;
+            }
+        }
+
+        // ---- ALIGNED TRIALS USING SECOND FLOOR ----
+        foreach (GameObject facing in facingSecondBlock)
+        {
+            List<GameObject> possibleTargets = new List<GameObject>(secondBlock);
+            possibleTargets.Remove(facing); // cannot point to itself
+
+            int targetIndex = 0;
+            for (int r = 0; r < repeatsPerFacing; r++)
+            {
+                GameObject target = possibleTargets[targetIndex];
+                trialsSecond.Add(new ExperimentalTrial(facing, target, "Semi_Aligned"));
+
+                targetIndex = (targetIndex + 1) % possibleTargets.Count;
+            }
+        }
+
+        // Shuffle trials
+        ShuffleTrials(trialsFirst);
+        ShuffleTrials(trialsSecond);
+
+        // Add all trials to final list
+        finalTrials.AddRange(trialsFirst);
+        finalTrials.AddRange(trialsSecond);
+
+        return finalTrials;
+    }
 
 
     //==== GENERAL METHODS ====\\
+    public void TurnParticipantLD(float targetYaw)
+    {
+        // Current camera yaw
+        float cameraYaw = xrCamera.eulerAngles.y;
+
+        // How much we need to rotate the rig
+        float deltaYaw = Mathf.DeltaAngle(cameraYaw, targetYaw);
+
+        // Rotate XR Origin around camera position
+        xrOrigin.RotateAround(
+            xrCamera.position,
+            Vector3.up,
+            deltaYaw
+        );
+    }
+
+    private IEnumerator MovePlayerVertically(int targetFloor, GameObject panelToSpawnAfterLift = null)
+    {
+        isMoving = true;
+
+        float targetY = targetFloor == 0 ? bottomFloorY : topFloorY;
+
+        Vector3 startPos = xrOrigin.position;
+        Vector3 targetPos = new Vector3(startPos.x, targetY, startPos.z);
+
+        teleportationProvider.enabled = false;
+        snapTurnProvider.enabled = false;
+
+        // ---- Phase 1: rotate ONCE to learning direction ----
+        if (forceLearningDirectionDuringLift)
+        {
+            TurnParticipantLD(learningDirection);
+        }
+
+        // ---- Wait so participant registers orientation ----
+        yield return new WaitForSeconds(liftDelayAfterRotation);
+
+        // ---- Phase 2: make floors transparent ----
+        SetFloorsTransparent(true);
+
+        float elapsed = 0f;
+
+        while (elapsed < liftDuration)
+        {
+            float t = elapsed / liftDuration;
+            t = Mathf.SmoothStep(0f, 1f, t);
+
+            xrOrigin.position = Vector3.Lerp(startPos, targetPos, t);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        xrOrigin.position = targetPos;
+        currentFloor = targetFloor;
+
+        // ---- Restore floors ----
+        SetFloorsTransparent(false);
+
+        teleportationProvider.enabled = true;
+        snapTurnProvider.enabled = true;
+        isMoving = false;
+
+        // ---- Spawn panel after lift ----
+        if (panelToSpawnAfterLift != null)
+        {
+            MovePanelInFrontCamera(panelToSpawnAfterLift);
+        }
+    }
+
+    public void TeleportPlayerToNextFloor()
+    {
+        isMoving = true;
+        int targetFloor = currentFloor == 0 ? 1 : 0;
+        StartCoroutine(MovePlayerVertically(targetFloor));
+
+        AddStage();
+    }
+
+    private void SetFloorsTransparent(bool transparent)
+    {
+        GameObject[] allFloors = GameObject.FindGameObjectsWithTag("Transparent");
+        
+        foreach (GameObject floor in allFloors)
+        {
+            Renderer r = floor.GetComponent<Renderer>();
+            if (r == null) continue;
+
+            if (transparent)
+            {
+                if (!originalFloorMaterials.ContainsKey(r))
+                    originalFloorMaterials[r] = r.materials;
+
+                Material[] transparentMats = new Material[r.materials.Length];
+                for (int i = 0; i < transparentMats.Length; i++)
+                    transparentMats[i] = transparentFloorMaterial;
+
+                r.materials = transparentMats;
+            }
+            else
+            {
+                if (originalFloorMaterials.TryGetValue(r, out var mats))
+                    r.materials = mats;
+            }
+        }
+
+        if (!transparent)
+            originalFloorMaterials.Clear();
+    }
+
+
     private void SpawnPanelInFrontAnchor(TeleportationAnchor targetAnchor, GameObject panelPrefab)
     {
         if (targetAnchor == null || panelPrefab == null)
@@ -578,7 +1039,25 @@ public class EventManager : MonoBehaviour
         }
     }
 
-    private void ShuffleTrials(List<PracticeTrial> list)
+    //private void ShuffleTrials(List<PracticeTrial> list)
+    //{
+    //    for (int i = 0; i < list.Count; i++)
+    //    {
+    //        int rand = UnityEngine.Random.Range(i, list.Count);
+    //        (list[i], list[rand]) = (list[rand], list[i]);
+    //    }
+    //}
+
+    //private void ShuffleTrials(List<ExperimentalTrial> list)
+    //{
+    //    for (int i = 0; i < list.Count; i++)
+    //    {
+    //        int rand = UnityEngine.Random.Range(i, list.Count);
+    //        (list[i], list[rand]) = (list[rand], list[i]);
+    //    }
+    //}
+
+    private void ShuffleTrials<T>(List<T> list)
     {
         for (int i = 0; i < list.Count; i++)
         {
@@ -702,4 +1181,36 @@ public class EventManager : MonoBehaviour
             stageText.text = "Stage: " + stage; 
         }
     }
+
+    private void TestAlignedTrials()
+    {
+        List<ExperimentalTrial> alignedTrials = GenerateExperimentalAlignedTrials(practiceObjects);
+
+        for (int i = 0; i < alignedTrials.Count; i++)
+        {
+            ExperimentalTrial t = alignedTrials[i];
+            Debug.Log($"Trial {i + 1}: Facing {t.facingObject.name} -> Pointing {t.pointingObject.name} (Type: {t.trialType})");
+        }
+    }
+    private void TestMisalignedTrials()
+    {
+        List<ExperimentalTrial> misalignedTrials = GenerateExperimentalMisalignedTrials(practiceObjects);
+
+        for (int i = 0; i < misalignedTrials.Count; i++)
+        {
+            ExperimentalTrial t = misalignedTrials[i];
+            Debug.Log($"Trial {i + 1}: Facing {t.facingObject.name} -> Pointing {t.pointingObject.name} (Type: {t.trialType})");
+        }
+    }
+    private void TestSemiAlignedTrials()
+    {
+        List<ExperimentalTrial> semialignedTrials = GenerateExperimentalSemiAlignedTrials(practiceObjects);
+
+        for (int i = 0; i < semialignedTrials.Count; i++)
+        {
+            ExperimentalTrial t = semialignedTrials[i];
+            Debug.Log($"Trial {i + 1}: Facing {t.facingObject.name} -> Pointing {t.pointingObject.name} (Type: {t.trialType})");
+        }
+    }
+
 }

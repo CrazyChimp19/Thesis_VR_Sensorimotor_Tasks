@@ -408,7 +408,7 @@ GameObject:
   - component: {fileID: 161287636}
   - component: {fileID: 161287640}
   - component: {fileID: 161287639}
-  - component: {fileID: 161287641}
+  - component: {fileID: 161287646}
   - component: {fileID: 161287644}
   - component: {fileID: 161287645}
   m_Layer: 0
@@ -493,50 +493,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_System: {fileID: 161287639}
   m_DelayTime: 0
---- !u!114 &161287641
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 161287635}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2213c36610e3b1c4bbf886810ed9db12, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_System: {fileID: 161287639}
-  m_TurnAmount: 45
-  m_DebounceTime: 0.5
-  m_EnableTurnLeftRight: 0
-  m_EnableTurnAround: 0
-  m_DelayTime: 0
-  m_LeftHandSnapTurnAction:
-    m_UseReference: 1
-    m_Action:
-      m_Name: Left Hand Snap Turn
-      m_Type: 0
-      m_ExpectedControlType: Vector2
-      m_Id: a1d07c24-ca50-422a-a23f-685d9fabf63b
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: -7374733323251553461, guid: c348712bda248c246b8c49b3db54643f,
-      type: 3}
-  m_RightHandSnapTurnAction:
-    m_UseReference: 1
-    m_Action:
-      m_Name: Right Hand Snap Turn
-      m_Type: 0
-      m_ExpectedControlType: Vector2
-      m_Id: a7b54797-6974-4f75-81d0-42b9c15ef1e0
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: -8525429354371678379, guid: c348712bda248c246b8c49b3db54643f,
-      type: 3}
 --- !u!114 &161287644
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -580,8 +536,7 @@ MonoBehaviour:
       m_Interactions: 
       m_SingletonActionBindings: []
       m_Flags: 0
-    m_Reference: {fileID: -8198699208435500284, guid: c348712bda248c246b8c49b3db54643f,
-      type: 3}
+    m_Reference: {fileID: 0}
 --- !u!114 &161287645
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -596,6 +551,49 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveProvider: {fileID: 161287644}
   cameraTransform: {fileID: 1277411504}
+--- !u!114 &161287646
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 161287635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2213c36610e3b1c4bbf886810ed9db12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_System: {fileID: 161287639}
+  m_TurnAmount: 45
+  m_DebounceTime: 0.5
+  m_EnableTurnLeftRight: 1
+  m_EnableTurnAround: 1
+  m_DelayTime: 0
+  m_LeftHandSnapTurnAction:
+    m_UseReference: 1
+    m_Action:
+      m_Name: Left Hand Snap Turn
+      m_Type: 0
+      m_ExpectedControlType: Vector2
+      m_Id: a1d07c24-ca50-422a-a23f-685d9fabf63b
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  m_RightHandSnapTurnAction:
+    m_UseReference: 1
+    m_Action:
+      m_Name: Right Hand Snap Turn
+      m_Type: 0
+      m_ExpectedControlType: Vector2
+      m_Id: a7b54797-6974-4f75-81d0-42b9c15ef1e0
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: -8525429354371678379, guid: c348712bda248c246b8c49b3db54643f,
+      type: 3}
 --- !u!1 &223511600
 GameObject:
   m_ObjectHideFlags: 0
@@ -783,7 +781,7 @@ GameObject:
   - component: {fileID: 234970911}
   m_Layer: 0
   m_Name: Floor
-  m_TagString: Untagged
+  m_TagString: Transparent
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1381,7 +1379,7 @@ GameObject:
   - component: {fileID: 382308503}
   m_Layer: 0
   m_Name: Ceiling
-  m_TagString: Untagged
+  m_TagString: Transparent
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2022,6 +2020,37 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &465514597
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 465514598}
+  m_Layer: 0
+  m_Name: ---- CANVAS ----
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &465514598
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 465514597}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 24.370588, y: -5.644446, z: 10.634423}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &499648962
 GameObject:
   m_ObjectHideFlags: 0
@@ -2350,6 +2379,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &634078495
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 634078496}
+  m_Layer: 0
+  m_Name: ---- TRIAL INSTRUCTORS ----
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &634078496
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 634078495}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 24.370588, y: -5.644446, z: 10.634423}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &717333462
 GameObject:
   m_ObjectHideFlags: 0
@@ -2369,7 +2429,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &717333463
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2795,7 +2855,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e05ab4246066a524cb21a7dbfff0da51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  learningDirection: 225
+  learningDirection: 0
   startingPoint: 0
   sensorimotorAlignment: 0
   condition: 0
@@ -2816,10 +2876,19 @@ MonoBehaviour:
   heightOffset: 1.5
   distanceInFrontFace: 3
   heightOffsetFace: 0.8
+  xrOrigin: {fileID: 161287638}
+  snapTurnProvider: {fileID: 161287646}
+  bottomFloorY: 0.01000011
+  topFloorY: 5.02
+  liftDuration: 3
+  forceLearningDirectionDuringLift: 1
+  transparentFloorMaterial: {fileID: 2100000, guid: eca1a757e89729b41b5386d77d62b9e7,
+    type: 2}
+  liftDelayAfterRotation: 2
   practiceObjects:
+  - {fileID: 724405657}
   - {fileID: 856542621}
   - {fileID: 331787631}
-  - {fileID: 724405657}
   - {fileID: 514021992}
   - {fileID: 552077458}
   - {fileID: 919889236}
@@ -2829,6 +2898,8 @@ MonoBehaviour:
   pointingToleranceDegrees: 15
   pointingHand: {fileID: 1140411293}
   testTrialText: {fileID: 1689847113}
+  object0LD: 
+  object225LD: 
   feedbackText: {fileID: 451344319}
   feedbackDuration: 3
   teleportPanelSpawned: 0
@@ -6859,6 +6930,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1752875588}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1778201874
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1778201875}
+  m_Layer: 0
+  m_Name: ---- BUILDING ----
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1778201875
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778201874}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 3, y: 3, z: 3}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1816860961
 GameObject:
   m_ObjectHideFlags: 0
@@ -8383,10 +8485,12 @@ SceneRoots:
   - {fileID: 16411147}
   - {fileID: 227544647}
   - {fileID: 1471753847}
+  - {fileID: 634078496}
   - {fileID: 362958583}
   - {fileID: 160334050}
   - {fileID: 717333467}
   - {fileID: 448124257}
+  - {fileID: 465514598}
   - {fileID: 499648967}
   - {fileID: 1095863416}
   - {fileID: 1499851573}
@@ -8398,6 +8502,7 @@ SceneRoots:
   - {fileID: 161287638}
   - {fileID: 2119053942}
   - {fileID: 1611214111}
+  - {fileID: 1778201875}
   - {fileID: 401291754}
   - {fileID: 1751287187}
   - {fileID: 1878439860}
