@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
@@ -11,10 +12,11 @@ using static UnityEngine.Rendering.DebugUI;
 public class EventManager : MonoBehaviour
 {
     [Header("Settings")]
-    public float learningDirection; // LD in degrees
-    public float startingPoint; // 0 for bottom floor, 1 for top floor
-    public float sensorimotorAlignment; // 90 or 315 degrees
-    public float condition; // 0 for solid, 1 for transparent
+    public int learningDirection; // LD in degrees
+    public int startingPoint; // 0 for bottom floor, 1 for top floor
+    public int sensorimotorAlignment; // 90 or 315 degrees
+    public int condition; // 0 for solid, 1 for transparent
+    public int trialOrder; // 0 for 1,2,3,4 ; 1 for 4,3,2,1
 
     [Header("Teleportation Provider")]
     public TeleportationProvider teleportationProvider;
@@ -26,8 +28,10 @@ public class EventManager : MonoBehaviour
     [SerializeField] private GameObject panelLearningPhase2; // assign your prefab in the inspector
     [SerializeField] private GameObject panelTestTrials; // assign your prefab in the inspector
     [SerializeField] private GameObject panelTestTrialInstructor; // assign your prefab in the inspector
+    [SerializeField] private GameObject panelTakeABreak; // assign your prefab in the inspector
     [SerializeField] private GameObject teleportButtonPanel1;
     [SerializeField] private GameObject teleportButtonPanel2;
+    [SerializeField] private GameObject teleportButtonStartEP;
     [SerializeField] private Transform xrCamera; // XR Origin Camera
     [SerializeField] private float distanceInFront = 1f; // distance in front of the anchor
     [SerializeField] private float heightOffset = 1.5f; // Adjust in Inspector
@@ -37,12 +41,13 @@ public class EventManager : MonoBehaviour
     [Header("Vertical Floor Movement")]
     [SerializeField] private Transform xrOrigin; // XR Origin (Action-based or Device-based)
     [SerializeField] private ActionBasedSnapTurnProvider snapTurnProvider;
-    [SerializeField] private float bottomFloorY = 0.01000011f;
-    [SerializeField] private float topFloorY = 5.02f;
-    [SerializeField] private float liftDuration = 1.5f; // seconds
+    private float bottomFloorY = 0.01000011f;
+    private float topFloorY = 5.02f;
+    [SerializeField] private float liftDuration = 3.0f; // seconds
+    [SerializeField] private float liftRotationDuration = 3.0f;
     [SerializeField] private bool forceLearningDirectionDuringLift = true;
     [SerializeField] private Material transparentFloorMaterial;
-    [SerializeField] private float liftDelayAfterRotation = 2f;
+    [SerializeField] private float liftDelayAfterRotation = 1f;
 
     private Dictionary<Renderer, Material[]> originalFloorMaterials = new();
     private bool isMoving = false; // tracks if the lift is running
@@ -61,8 +66,12 @@ public class EventManager : MonoBehaviour
     private GameObject pendingPracticePanel = null;
 
     [Header("Experimental Trials")]
-    [SerializeField] private string object0LD; // Name of Object in 0 LD
-    [SerializeField] private string object225LD; // Name of Object in 225 LD
+    private List<ExperimentalTrial> experimentalTrials;
+    [SerializeField] private List<TMP_Text> experimentInstructionPanel;
+    private bool isTransparent = false;
+    private int currentExperimentalTrialIndex = 0;
+    private bool experimentRunning = false;
+    private bool initialized = false;
 
     [Header("Feedback UI")]
     [SerializeField] private TMP_Text feedbackText;
@@ -72,14 +81,15 @@ public class EventManager : MonoBehaviour
 
     [Header("XR Input")]
     private InputAction rightPrimaryButton;
-    [SerializeField] private bool teleportPanelSpawned;
+    private bool panelSpawned;
+    private bool EPPanelSpawned;
 
     [Header("Debug UI")]
     [SerializeField] private TMP_Text stageText;
 
     private int stage = 0;
     private int currentFloor; // 0 = bottom, 1 = top
-
+    
 
 
     [System.Serializable]
@@ -126,10 +136,10 @@ public class EventManager : MonoBehaviour
         currentFloor = (int)startingPoint;
 
         //---- TEST TRIAL GENERATION
-        //TestAlignedTrials();
+        TestAlignedTrials();
         //TestMisalignedTrials();
         //TestSemiAlignedTrials();
-        TestSemiMisalignedTrials();
+        //TestSemiMisalignedTrials();
     }
 
     // Update is called once per frame
@@ -138,9 +148,15 @@ public class EventManager : MonoBehaviour
         // ---- OUTLINES ---- //
         UpdateOutlines();
 
+        //==== !!!!! FOR TESTING PURPOSES, REMOVE LATER! !!!!! ====\\
+        if (stage == 1)
+        {
+            stage =+ 6;
+        }
+
         //==== LEARNING PHASE ===\\
         // Stage 2 handles the first room in the learning phase
-        if (stage == 2 && !teleportPanelSpawned)
+        if (stage == 2 && !panelSpawned)
         { 
             if (rightPrimaryButton.IsPressed())
             {
@@ -149,26 +165,25 @@ public class EventManager : MonoBehaviour
                 if (holdTimer >= holdDuration)
                 {
                     SpawnPanelInFrontCamera(teleportButtonPanel1);
-                    teleportPanelSpawned = true;
+                    panelSpawned = true;
                 }
             }
             else
             {
-                if (holdTimer > 0f)
                 holdTimer = 0f;
             }
         }
 
-        if (stage == 3 && !teleportPanelSpawned)
+        if (stage == 3 && !panelSpawned)
         {
             if (!isMoving)
             {
                 SpawnPanelInFrontCamera(panelLearningPhase2);
-                teleportPanelSpawned = true;
+                panelSpawned = true;
             }
         }
 
-        if (stage == 4 && !teleportPanelSpawned)
+        if (stage == 4 && !panelSpawned)
         {
             if (rightPrimaryButton.IsPressed())
             {
@@ -177,22 +192,21 @@ public class EventManager : MonoBehaviour
                 if (holdTimer >= holdDuration)
                 {
                     SpawnPanelInFrontCamera(teleportButtonPanel2);
-                    teleportPanelSpawned = true;
+                    panelSpawned = true;
 }
             }
             else
             {
-                if (holdTimer > 0f)
-                    holdTimer = 0f;
+                holdTimer = 0f;
             }
         }
 
-        if (stage == 5 && !teleportPanelSpawned)
+        if (stage == 5 && !panelSpawned)
         {
             if (!isMoving)
             {
                 SpawnPanelInFrontCamera(panelTestTrials);
-                teleportPanelSpawned = true;
+                panelSpawned = true;
             }
         }
 
@@ -241,20 +255,195 @@ public class EventManager : MonoBehaviour
                     }
                     else
                     {
-                        if (holdTimer > 0f)
-                            holdTimer = 0f;
+                        holdTimer = 0f;
                     }
                 }
             }
         }
 
 
-        //==== EXPERIMENTAL PHASE ====\\
+        //==== BREAK TIME ====\\
+        // 5 minute break to prevent motion sickness
         if (stage == 7)
         {
-            panelTestTrialInstructor.SetActive(false);
+            if (!isMoving && !panelSpawned)
+            {
+                panelTestTrialInstructor.SetActive(false);
+                panelTakeABreak.SetActive(true);
+                MovePanelInFrontCamera(panelTakeABreak);
+                panelSpawned = true;
+            }
+
+            if (rightPrimaryButton.IsPressed() && !isMoving && !EPPanelSpawned)
+            {
+                holdTimer += Time.deltaTime;
+
+                if (holdTimer >= holdDuration)
+                {
+                    panelTakeABreak.SetActive(false);
+                    SpawnPanelInFrontCamera(teleportButtonStartEP);
+                    EPPanelSpawned = true;
+                }
+            }
+            else
+            {
+                holdTimer = 0f;
+            }
         }
+
+        //==== EXPERIMENTAL PHASE ====\\
+        //---- PHASE 1 ----
+        // Start first experimental trial type
+        if (stage == 8)
+        {
+            if (!initialized)
+            {
+                if (!EPPanelSpawned && condition == 0)
+                {
+                    MovePanelInFrontCamera(panelTestTrialInstructor); // Change this to correct instruction panel
+                    EPPanelSpawned = true;
+                }
+                else if (!EPPanelSpawned && condition == 1)
+                {
+                    MovePanelInFrontCamera(panelTestTrialInstructor); // Change this to correct instruction panel
+                    EPPanelSpawned = true;
+                }
+
+                // Turn floors transparent in transparent condition
+                if (condition == 1 && !isTransparent)
+                {
+                    SetFloorsTransparent(true);
+                    isTransparent = true;
+                }
+
+                // Generate the correct trials
+                if (trialOrder == 0)
+                {
+                    experimentalTrials = GenerateExperimentalAlignedTrials(practiceObjects);
+                }
+                else if (trialOrder == 1)
+                {
+                    experimentalTrials = GenerateExperimentalMisalignedTrials(practiceObjects);
+                }
+
+                currentExperimentalTrialIndex = 0;
+                holdTimer = 0f;
+                initialized = true;
+            }
+            else if(initialized)
+            {
+                AddStage();
+                initialized = false;
+            }
+            
+        }
+                
+        if (stage == 9)
+        {
+            // Start practice session once
+            if (!experimentRunning)
+            {
+                panelTestTrialInstructor.SetActive(true);
+                StartExperimentalSession();
+                experimentRunning = true;
+            }
+            else
+            {
+                // ---- Spawn pending panel after lift ----
+                if (pendingPracticePanel != null && !isMoving)
+                {
+                    MovePanelInFrontCamera(pendingPracticePanel);
+                    pendingPracticePanel = null;
+                }
+
+                // Only process input if there are remaining trials
+                if (currentExperimentalTrialIndex < experimentalTrials.Count && !isMoving)
+                {
+                    ExperimentalTrial currentTrial = experimentalTrials[currentExperimentalTrialIndex];
+
+                    if (rightPrimaryButton.IsPressed())
+                    {
+                        holdTimer += Time.deltaTime;
+
+                        if (holdTimer >= holdDuration)
+                        {
+                            // Check if pointing is correct
+                            //bool correct = IsPointingCorrect(currentTrial);
+                            //ShowFeedback(correct);
+
+                            // Advance to next trial
+                            currentExperimentalTrialIndex++;
+                            ShowNextExperimentalTrial();
+
+                            // Reset hold timer
+                            holdTimer = 0f;
+                        }
+                    }
+                    else
+                    {
+                        holdTimer = 0f;
+                    }
+                }
+            }
+        }
+        
+
+        //---- PHASE 2 ----
+        if (stage == 10)
+        {
+            // Generate the correct trials
+            if (trialOrder == 0)
+            {
+                experimentalTrials = GenerateExperimentalSemiAlignedTrials(practiceObjects);
+            }
+            else if (trialOrder == 1)
+            {
+                experimentalTrials = GenerateExperimentalSemiMisalignedTrials(practiceObjects);
+            }
+
+            currentPracticeTrialIndex = 0;
+            holdTimer = 0f;
+        }
+
+        //---- PHASE 3 ----
+        if (stage == 12)
+        {
+            // Generate the correct trials
+            if (trialOrder == 0)
+            {
+                experimentalTrials = GenerateExperimentalSemiMisalignedTrials(practiceObjects);
+            }
+            else if (trialOrder == 1)
+            {
+                experimentalTrials = GenerateExperimentalSemiAlignedTrials(practiceObjects);
+            }
+
+            currentPracticeTrialIndex = 0;
+            holdTimer = 0f;
+        }
+
+
+        //---- PHASE 4 ----
+        if (stage == 14)
+        {
+            // Generate the correct trials
+            if (trialOrder == 0)
+            {
+                experimentalTrials = GenerateExperimentalMisalignedTrials(practiceObjects);
+            }
+            else if (trialOrder == 1)
+            {
+                experimentalTrials = GenerateExperimentalAlignedTrials(practiceObjects);
+            }
+
+            currentPracticeTrialIndex = 0;
+            holdTimer = 0f;
+        }
+
     }
+
+
+
 
     //==== LEARNING PHASE ====\\
     private void TeleportToAnchor(TeleportationAnchor targetAnchor)
@@ -371,9 +560,6 @@ public class EventManager : MonoBehaviour
         // Move instruction panel in front of player
         MovePanelInFrontCamera(panelTestTrialInstructor);
 
-        // Teleport player to starting floor
-        TeleportToStartingFloor();
-
         ShowNextPracticeTrial();
     }
 
@@ -408,7 +594,7 @@ public class EventManager : MonoBehaviour
     {
         practiceRunning = false;
         Debug.Log("Practice session complete.");
-        AddStage(); // advance to the next stage of the experiment
+        TeleportPlayerToNextFloor();
     }
 
     
@@ -505,6 +691,10 @@ public class EventManager : MonoBehaviour
         TeleportationAnchor startAnchor = startingPoint == 0 ? Bottom_LearningDirection : Top_LearningDirection;
         TeleportToAnchor(startAnchor);
     }
+
+
+
+
 
     //==== EXPERIMENTAL PHASE ====\\
     private List<ExperimentalTrial> GenerateExperimentalAlignedTrials(List<GameObject> allObjects)
@@ -830,21 +1020,88 @@ public class EventManager : MonoBehaviour
         return finalTrials;
     }
 
+    private void StartExperimentalSession()
+    {
+        // Move instruction panel in front of player
+        MovePanelInFrontCamera(panelTestTrialInstructor);
+
+        ShowNextExperimentalTrial();
+    }
+
+    private void ShowNextExperimentalTrial()
+    {
+        if (currentExperimentalTrialIndex >= experimentalTrials.Count)
+        {
+            EndPracticeSession();
+            return;
+        }
+
+        // After the first 8 trials, teleport to the other floor
+        // WRITE IF STATEMENTS FOR THE CORRECT MOVING BETWEEN FLOORS!!
+        if (currentExperimentalTrialIndex == 8)
+        {
+            int targetFloor = currentFloor == 0 ? 1 : 0;
+
+            // Start vertical movement and pass the panel to spawn after lift
+            StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+        }
+        else
+        {
+            // Normal trials: move panel immediately
+            MovePanelInFrontCamera(panelTestTrialInstructor);
+        }
+
+        ExperimentalTrial trial = experimentalTrials[currentExperimentalTrialIndex];
+        testTrialText.text = $"Face {trial.facingObject.name}, point to {trial.pointingObject.name}";
+    }
+
+
+    private void EndExperimentalSession()
+    {
+        experimentRunning = false;
+        Debug.Log("Practice session complete.");
+        TeleportPlayerToNextFloor();
+    }
+
+
+
 
     //==== GENERAL METHODS ====\\
-    public void TurnParticipantLD(float targetYaw)
+    private IEnumerator TurnParticipantLDGradual(float targetYaw, float turnDuration)
     {
-        // Current camera yaw
-        float cameraYaw = xrCamera.eulerAngles.y;
+        float startYaw = xrCamera.eulerAngles.y;
+        float totalDeltaYaw = Mathf.DeltaAngle(startYaw, targetYaw);
 
-        // How much we need to rotate the rig
-        float deltaYaw = Mathf.DeltaAngle(cameraYaw, targetYaw);
+        float elapsed = 0f;
 
-        // Rotate XR Origin around camera position
+        while (elapsed < turnDuration)
+        {
+            float t = elapsed / turnDuration;
+            t = Mathf.SmoothStep(0f, 1f, t);
+
+            float currentDelta = totalDeltaYaw * t;
+            float previousDelta = totalDeltaYaw * Mathf.SmoothStep(
+                0f, 1f, (elapsed - Time.deltaTime) / turnDuration
+            );
+
+            float deltaThisFrame = currentDelta - previousDelta;
+
+            xrOrigin.RotateAround(
+                xrCamera.position,
+                Vector3.up,
+                deltaThisFrame
+            );
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Final correction (guarantees exact alignment)
+        float finalDelta = Mathf.DeltaAngle(xrCamera.eulerAngles.y, targetYaw);
         xrOrigin.RotateAround(
             xrCamera.position,
             Vector3.up,
-            deltaYaw
+            finalDelta
         );
     }
 
@@ -861,10 +1118,8 @@ public class EventManager : MonoBehaviour
         snapTurnProvider.enabled = false;
 
         // ---- Phase 1: rotate ONCE to learning direction ----
-        if (forceLearningDirectionDuringLift)
-        {
-            TurnParticipantLD(learningDirection);
-        }
+        yield return StartCoroutine(TurnParticipantLDGradual(learningDirection, liftRotationDuration));
+
 
         // ---- Wait so participant registers orientation ----
         yield return new WaitForSeconds(liftDelayAfterRotation);
@@ -1018,7 +1273,7 @@ public class EventManager : MonoBehaviour
     {
         stage ++;
         UpdateStageText();
-        teleportPanelSpawned = false;
+        panelSpawned = false;
         holdTimer = 0f;
     }
 
