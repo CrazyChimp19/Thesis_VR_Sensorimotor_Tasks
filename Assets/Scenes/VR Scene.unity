@@ -3131,7 +3131,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   learningDirection: 0
-  startingPoint: 1
+  startingPoint: 0
   sensorimotorAlignment: 0
   condition: 0
   trialOrder: 0

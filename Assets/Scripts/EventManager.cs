@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -89,6 +90,7 @@ public class EventManager : MonoBehaviour
 
     private int stage = 0;
     private int currentFloor; // 0 = bottom, 1 = top
+    private int trialType;
     
 
 
@@ -136,7 +138,7 @@ public class EventManager : MonoBehaviour
         currentFloor = (int)startingPoint;
 
         //---- TEST TRIAL GENERATION
-        TestAlignedTrials();
+        //TestAlignedTrials();
         //TestMisalignedTrials();
         //TestSemiAlignedTrials();
         //TestSemiMisalignedTrials();
@@ -293,19 +295,23 @@ public class EventManager : MonoBehaviour
 
         //==== EXPERIMENTAL PHASE ====\\
         //---- PHASE 1 ----
-        // Start first experimental trial type
-        if (stage == 8)
+        // Initialize the correct experimental trial types for each stage
+        if (stage == 8 || stage == 10 || stage == 12 || stage == 14)
         {
             if (!initialized)
             {
-                if (!EPPanelSpawned && condition == 0)
+                // ---- Spawn or defer instruction panel ----
+                if (!EPPanelSpawned)
                 {
-                    MovePanelInFrontCamera(panelTestTrialInstructor); // Change this to correct instruction panel
-                    EPPanelSpawned = true;
-                }
-                else if (!EPPanelSpawned && condition == 1)
-                {
-                    MovePanelInFrontCamera(panelTestTrialInstructor); // Change this to correct instruction panel
+                    if (!isMoving)
+                    {
+                        MovePanelInFrontCamera(panelTestTrialInstructor);
+                    }
+                    else
+                    {
+                        pendingPracticePanel = panelTestTrialInstructor;
+                    }
+
                     EPPanelSpawned = true;
                 }
 
@@ -317,15 +323,61 @@ public class EventManager : MonoBehaviour
                 }
 
                 // Generate the correct trials
-                if (trialOrder == 0)
+                switch (stage) 
                 {
-                    experimentalTrials = GenerateExperimentalAlignedTrials(practiceObjects);
-                }
-                else if (trialOrder == 1)
-                {
-                    experimentalTrials = GenerateExperimentalMisalignedTrials(practiceObjects);
-                }
+                    case (8):
+                        if (trialOrder == 0)
+                        {
+                            experimentalTrials = GenerateExperimentalAlignedTrials(practiceObjects);
+                            trialType = 1;
+                        }
+                        else if (trialOrder == 1)
+                        {
+                            experimentalTrials = GenerateExperimentalMisalignedTrials(practiceObjects);
+                            trialType = 4;
+                        }
+                        break;
 
+                    case (10):
+                        if (trialOrder == 0)
+                        {
+                            experimentalTrials = GenerateExperimentalSemiAlignedTrials(practiceObjects);
+                            trialType = 2;
+                        }
+                        else if (trialOrder == 1)
+                        {
+                            experimentalTrials = GenerateExperimentalSemiMisalignedTrials(practiceObjects);
+                            trialType = 3;
+                        }
+                        break;
+
+                    case (12):
+                        if (trialOrder == 0)
+                        {
+                            experimentalTrials = GenerateExperimentalSemiMisalignedTrials(practiceObjects);
+                            trialType = 3;
+                        }
+                        else if (trialOrder == 1)
+                        {
+                            experimentalTrials = GenerateExperimentalSemiAlignedTrials(practiceObjects);
+                            trialType = 2;
+                        }
+                        break;
+
+                    case (14):
+                        if (trialOrder == 0)
+                        {
+                            experimentalTrials = GenerateExperimentalMisalignedTrials(practiceObjects);
+                            trialType = 4;
+                        }
+                        else if (trialOrder == 1)
+                        {
+                            experimentalTrials = GenerateExperimentalAlignedTrials(practiceObjects);
+                            trialType = 1;
+                        }
+                        break;
+                }
+               
                 currentExperimentalTrialIndex = 0;
                 holdTimer = 0f;
                 initialized = true;
@@ -334,11 +386,14 @@ public class EventManager : MonoBehaviour
             {
                 AddStage();
                 initialized = false;
+                EPPanelSpawned = false;
+                pendingPracticePanel = null;
             }
             
         }
-                
-        if (stage == 9)
+        
+        // Conduct the experimental trials
+        if (stage == 9 || stage == 11 || stage == 13 || stage == 15)
         {
             // Start practice session once
             if (!experimentRunning)
@@ -386,62 +441,7 @@ public class EventManager : MonoBehaviour
                 }
             }
         }
-        
-
-        //---- PHASE 2 ----
-        if (stage == 10)
-        {
-            // Generate the correct trials
-            if (trialOrder == 0)
-            {
-                experimentalTrials = GenerateExperimentalSemiAlignedTrials(practiceObjects);
-            }
-            else if (trialOrder == 1)
-            {
-                experimentalTrials = GenerateExperimentalSemiMisalignedTrials(practiceObjects);
-            }
-
-            currentPracticeTrialIndex = 0;
-            holdTimer = 0f;
-        }
-
-        //---- PHASE 3 ----
-        if (stage == 12)
-        {
-            // Generate the correct trials
-            if (trialOrder == 0)
-            {
-                experimentalTrials = GenerateExperimentalSemiMisalignedTrials(practiceObjects);
-            }
-            else if (trialOrder == 1)
-            {
-                experimentalTrials = GenerateExperimentalSemiAlignedTrials(practiceObjects);
-            }
-
-            currentPracticeTrialIndex = 0;
-            holdTimer = 0f;
-        }
-
-
-        //---- PHASE 4 ----
-        if (stage == 14)
-        {
-            // Generate the correct trials
-            if (trialOrder == 0)
-            {
-                experimentalTrials = GenerateExperimentalMisalignedTrials(practiceObjects);
-            }
-            else if (trialOrder == 1)
-            {
-                experimentalTrials = GenerateExperimentalAlignedTrials(practiceObjects);
-            }
-
-            currentPracticeTrialIndex = 0;
-            holdTimer = 0f;
-        }
-
     }
-
 
 
 
@@ -1032,38 +1032,161 @@ public class EventManager : MonoBehaviour
     {
         if (currentExperimentalTrialIndex >= experimentalTrials.Count)
         {
-            EndPracticeSession();
+            EndExperimentalSession();
             return;
         }
 
         // After the first 8 trials, teleport to the other floor
         // WRITE IF STATEMENTS FOR THE CORRECT MOVING BETWEEN FLOORS!!
-        if (currentExperimentalTrialIndex == 8)
+        switch (trialType)
         {
-            int targetFloor = currentFloor == 0 ? 1 : 0;
+            case 1:
+                if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225)) 
+                {
+                    if (currentExperimentalTrialIndex == 12)
+                    {
+                        int targetFloor = currentFloor == 0 ? 1 : 0;
 
-            // Start vertical movement and pass the panel to spawn after lift
-            StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+                        // Start vertical movement and pass the panel to spawn after lift
+                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+                    }
+                    else
+                    {
+                        // Normal trials: move panel immediately
+                        MovePanelInFrontCamera(panelTestTrialInstructor);
+                    }
+                }
+                else if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
+                {
+                    if (currentExperimentalTrialIndex == 9)
+                    {
+                        int targetFloor = currentFloor == 0 ? 1 : 0;
+
+                        // Start vertical movement and pass the panel to spawn after lift
+                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+                    }
+                    else
+                    {
+                        // Normal trials: move panel immediately
+                        MovePanelInFrontCamera(panelTestTrialInstructor);
+                    }
+                }
+                    break;
+
+            case 2:
+                if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225))
+                {
+                    if (currentExperimentalTrialIndex == 16)
+                    {
+                        int targetFloor = currentFloor == 0 ? 1 : 0;
+
+                        // Start vertical movement and pass the panel to spawn after lift
+                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+                    }
+                    else
+                    {
+                        // Normal trials: move panel immediately
+                        MovePanelInFrontCamera(panelTestTrialInstructor);
+                    }
+                }
+                else if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
+                {
+                    if (currentExperimentalTrialIndex == 12)
+                    {
+                        int targetFloor = currentFloor == 0 ? 1 : 0;
+
+                        // Start vertical movement and pass the panel to spawn after lift
+                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+                    }
+                    else
+                    {
+                        // Normal trials: move panel immediately
+                        MovePanelInFrontCamera(panelTestTrialInstructor);
+                    }
+                }
+                break;
+
+            case 3:
+                if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
+                {
+                    if (currentExperimentalTrialIndex == 16)
+                    {
+                        int targetFloor = currentFloor == 0 ? 1 : 0;
+
+                        // Start vertical movement and pass the panel to spawn after lift
+                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+                    }
+                    else
+                    {
+                        // Normal trials: move panel immediately
+                        MovePanelInFrontCamera(panelTestTrialInstructor);
+                    }
+                }
+                else if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225))
+                {
+                    if (currentExperimentalTrialIndex == 12)
+                    {
+                        int targetFloor = currentFloor == 0 ? 1 : 0;
+
+                        // Start vertical movement and pass the panel to spawn after lift
+                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+                    }
+                    else
+                    {
+                        // Normal trials: move panel immediately
+                        MovePanelInFrontCamera(panelTestTrialInstructor);
+                    }
+                }
+                break;
+
+            case 4:
+                if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
+                {
+                    if (currentExperimentalTrialIndex == 12)
+                    {
+                        int targetFloor = currentFloor == 0 ? 1 : 0;
+
+                        // Start vertical movement and pass the panel to spawn after lift
+                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+                    }
+                    else
+                    {
+                        // Normal trials: move panel immediately
+                        MovePanelInFrontCamera(panelTestTrialInstructor);
+                    }
+                }
+                else if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225))
+                {
+                    if (currentExperimentalTrialIndex == 9)
+                    {
+                        int targetFloor = currentFloor == 0 ? 1 : 0;
+
+                        // Start vertical movement and pass the panel to spawn after lift
+                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+                    }
+                    else
+                    {
+                        // Normal trials: move panel immediately
+                        MovePanelInFrontCamera(panelTestTrialInstructor);
+                    }
+                }
+                break;
         }
-        else
-        {
-            // Normal trials: move panel immediately
-            MovePanelInFrontCamera(panelTestTrialInstructor);
-        }
+
+        
 
         ExperimentalTrial trial = experimentalTrials[currentExperimentalTrialIndex];
-        testTrialText.text = $"Face {trial.facingObject.name}, point to {trial.pointingObject.name}";
+        testTrialText.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
     }
 
 
     private void EndExperimentalSession()
     {
         experimentRunning = false;
+        panelTestTrialInstructor.SetActive(false);
         Debug.Log("Practice session complete.");
         TeleportPlayerToNextFloor();
     }
-
-
 
 
     //==== GENERAL METHODS ====\\
@@ -1479,5 +1602,4 @@ public class EventManager : MonoBehaviour
             Debug.Log($"Trial {i + 1}: Facing {t.facingObject.name} -> Pointing {t.pointingObject.name} (Type: {t.trialType})");
         }
     }
-
 }
