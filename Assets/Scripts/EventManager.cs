@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
 using UnityEngine.XR.Interaction.Toolkit;
+using static UnityEngine.ParticleSystem;
 using static UnityEngine.Rendering.DebugUI;
 
 public class EventManager : MonoBehaviour
@@ -68,11 +69,18 @@ public class EventManager : MonoBehaviour
 
     [Header("Experimental Trials")]
     private List<ExperimentalTrial> experimentalTrials;
-    [SerializeField] private List<TMP_Text> experimentInstructionPanel;
     private bool isTransparent = false;
     private int currentExperimentalTrialIndex = 0;
     private bool experimentRunning = false;
     private bool initialized = false;
+
+    [SerializeField] private GameObject trialInstructor90;
+    [SerializeField] private GameObject trialInstructor315;
+    [SerializeField] private TMP_Text text90Bottom;
+    [SerializeField] private TMP_Text text90Top;
+    [SerializeField] private TMP_Text text315Bottom;
+    [SerializeField] private TMP_Text text315Top;
+
 
     [Header("Feedback UI")]
     [SerializeField] private TMP_Text feedbackText;
@@ -87,6 +95,7 @@ public class EventManager : MonoBehaviour
 
     [Header("Debug UI")]
     [SerializeField] private TMP_Text stageText;
+    [SerializeField] private TMP_Text indexText;
 
     private int stage = 0;
     private int currentFloor; // 0 = bottom, 1 = top
@@ -266,7 +275,7 @@ public class EventManager : MonoBehaviour
 
         //==== BREAK TIME ====\\
         // 5 minute break to prevent motion sickness
-        if (stage == 7)
+        if (stage == 7 || stage == 12)
         {
             if (!isMoving && !panelSpawned)
             {
@@ -294,9 +303,8 @@ public class EventManager : MonoBehaviour
         }
 
         //==== EXPERIMENTAL PHASE ====\\
-        //---- PHASE 1 ----
-        // Initialize the correct experimental trial types for each stage
-        if (stage == 8 || stage == 10 || stage == 12 || stage == 14)
+        //---- Initialize the correct experimental trial types for each stage ----
+        if (stage == 8 || stage == 10 || stage == 13 || stage == 15)
         {
             if (!initialized)
             {
@@ -351,7 +359,7 @@ public class EventManager : MonoBehaviour
                         }
                         break;
 
-                    case (12):
+                    case (13):
                         if (trialOrder == 0)
                         {
                             experimentalTrials = GenerateExperimentalSemiMisalignedTrials(practiceObjects);
@@ -364,7 +372,7 @@ public class EventManager : MonoBehaviour
                         }
                         break;
 
-                    case (14):
+                    case (15):
                         if (trialOrder == 0)
                         {
                             experimentalTrials = GenerateExperimentalMisalignedTrials(practiceObjects);
@@ -392,25 +400,18 @@ public class EventManager : MonoBehaviour
             
         }
         
-        // Conduct the experimental trials
-        if (stage == 9 || stage == 11 || stage == 13 || stage == 15)
+        //---- Conduct the experimental trials ----
+        if (stage == 9 || stage == 11 || stage == 14 || stage == 16)
         {
+            UpdateIndexText();
             // Start practice session once
             if (!experimentRunning)
             {
-                panelTestTrialInstructor.SetActive(true);
                 StartExperimentalSession();
                 experimentRunning = true;
             }
             else
             {
-                // ---- Spawn pending panel after lift ----
-                if (pendingPracticePanel != null && !isMoving)
-                {
-                    MovePanelInFrontCamera(pendingPracticePanel);
-                    pendingPracticePanel = null;
-                }
-
                 // Only process input if there are remaining trials
                 if (currentExperimentalTrialIndex < experimentalTrials.Count && !isMoving)
                 {
@@ -420,7 +421,7 @@ public class EventManager : MonoBehaviour
                     {
                         holdTimer += Time.deltaTime;
 
-                        if (holdTimer >= holdDuration)
+                        if (holdTimer >= 0.2)
                         {
                             // Check if pointing is correct
                             //bool correct = IsPointingCorrect(currentTrial);
@@ -440,6 +441,11 @@ public class EventManager : MonoBehaviour
                     }
                 }
             }
+        }
+
+        if (stage == 17)
+        {
+
         }
     }
 
@@ -1023,7 +1029,14 @@ public class EventManager : MonoBehaviour
     private void StartExperimentalSession()
     {
         // Move instruction panel in front of player
-        MovePanelInFrontCamera(panelTestTrialInstructor);
+        if (sensorimotorAlignment == 90)
+        {
+            trialInstructor90.SetActive(true);
+        }
+        else if (sensorimotorAlignment == 315)
+        {
+            trialInstructor315.SetActive(true);
+        }
 
         ShowNextExperimentalTrial();
     }
@@ -1050,11 +1063,6 @@ public class EventManager : MonoBehaviour
                         // Start vertical movement and pass the panel to spawn after lift
                         StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
                     }
-                    else
-                    {
-                        // Normal trials: move panel immediately
-                        MovePanelInFrontCamera(panelTestTrialInstructor);
-                    }
                 }
                 else if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
                 {
@@ -1064,11 +1072,6 @@ public class EventManager : MonoBehaviour
 
                         // Start vertical movement and pass the panel to spawn after lift
                         StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
-                    }
-                    else
-                    {
-                        // Normal trials: move panel immediately
-                        MovePanelInFrontCamera(panelTestTrialInstructor);
                     }
                 }
                     break;
@@ -1083,11 +1086,6 @@ public class EventManager : MonoBehaviour
                         // Start vertical movement and pass the panel to spawn after lift
                         StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
                     }
-                    else
-                    {
-                        // Normal trials: move panel immediately
-                        MovePanelInFrontCamera(panelTestTrialInstructor);
-                    }
                 }
                 else if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
                 {
@@ -1097,11 +1095,6 @@ public class EventManager : MonoBehaviour
 
                         // Start vertical movement and pass the panel to spawn after lift
                         StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
-                    }
-                    else
-                    {
-                        // Normal trials: move panel immediately
-                        MovePanelInFrontCamera(panelTestTrialInstructor);
                     }
                 }
                 break;
@@ -1116,11 +1109,6 @@ public class EventManager : MonoBehaviour
                         // Start vertical movement and pass the panel to spawn after lift
                         StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
                     }
-                    else
-                    {
-                        // Normal trials: move panel immediately
-                        MovePanelInFrontCamera(panelTestTrialInstructor);
-                    }
                 }
                 else if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225))
                 {
@@ -1130,11 +1118,6 @@ public class EventManager : MonoBehaviour
 
                         // Start vertical movement and pass the panel to spawn after lift
                         StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
-                    }
-                    else
-                    {
-                        // Normal trials: move panel immediately
-                        MovePanelInFrontCamera(panelTestTrialInstructor);
                     }
                 }
                 break;
@@ -1149,11 +1132,6 @@ public class EventManager : MonoBehaviour
                         // Start vertical movement and pass the panel to spawn after lift
                         StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
                     }
-                    else
-                    {
-                        // Normal trials: move panel immediately
-                        MovePanelInFrontCamera(panelTestTrialInstructor);
-                    }
                 }
                 else if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225))
                 {
@@ -1164,27 +1142,95 @@ public class EventManager : MonoBehaviour
                         // Start vertical movement and pass the panel to spawn after lift
                         StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
                     }
-                    else
-                    {
-                        // Normal trials: move panel immediately
-                        MovePanelInFrontCamera(panelTestTrialInstructor);
-                    }
                 }
                 break;
-        }
-
-        
+        }     
 
         ExperimentalTrial trial = experimentalTrials[currentExperimentalTrialIndex];
-        testTrialText.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+
+        if (trialType == 1 || trialType == 2)
+        {
+            if (sensorimotorAlignment == 90)
+            {
+                if (trial.facingObject.tag == "Bottom")
+                {
+                    text90Bottom.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+                else if (trial.facingObject.tag == "Top")
+                {
+                    text90Top.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+            }
+            else if (sensorimotorAlignment == 315)
+            {
+                if (trial.facingObject.tag == "Bottom")
+                {
+                    text315Bottom.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+                else if (trial.facingObject.tag == "Top")
+                {
+                    text315Top.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+            }
+        }
+        else if (trialType == 3 || trialType == 4)
+        {
+            if (sensorimotorAlignment == 90)
+            {
+                if (trial.facingObject.tag == "Bottom")
+                {
+                    text90Top.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+                else if (trial.facingObject.tag == "Top")
+                {
+                    text90Bottom.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+            }
+            else if (sensorimotorAlignment == 315)
+            {
+                if (trial.facingObject.tag == "Bottom")
+                {
+                    text315Top.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+                else if (trial.facingObject.tag == "Top")
+                {
+                    text315Bottom.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+            }
+        }
     }
 
 
     private void EndExperimentalSession()
     {
+        if (stage == 17)
+        {
+            if (sensorimotorAlignment == 90)
+            {
+                trialInstructor90.SetActive(false);
+            }
+            else if (sensorimotorAlignment == 315)
+            {
+                trialInstructor315.SetActive(false);
+            }
+        }
+        else
+        {
+            if (sensorimotorAlignment == 90)
+            {
+                text90Top.text = "";
+                text90Bottom.text = "";
+            }
+            else if (sensorimotorAlignment == 315)
+            {
+                text315Top.text = "";
+                text315Bottom.text = "";
+            }
+        }
+
+
         experimentRunning = false;
-        panelTestTrialInstructor.SetActive(false);
-        Debug.Log("Practice session complete.");
+        Debug.Log("Experimental session complete.");
         TeleportPlayerToNextFloor();
     }
 
@@ -1248,8 +1294,15 @@ public class EventManager : MonoBehaviour
         yield return new WaitForSeconds(liftDelayAfterRotation);
 
         // ---- Phase 2: make floors transparent ----
-        SetFloorsTransparent(true);
-
+        if (condition == 1 && stage <= 7)
+        {
+            SetFloorsTransparent(true);
+        }
+        else if (condition == 0)
+        {
+            SetFloorsTransparent(true);
+        }
+            
         float elapsed = 0f;
 
         while (elapsed < liftDuration)
@@ -1267,7 +1320,15 @@ public class EventManager : MonoBehaviour
         currentFloor = targetFloor;
 
         // ---- Restore floors ----
-        SetFloorsTransparent(false);
+        // ---- Phase 2: make floors transparent ----
+        if (condition == 1 && stage <= 7)
+        {
+            SetFloorsTransparent(false);
+        }
+        else if (condition == 0)
+        {
+            SetFloorsTransparent(false);
+        }
 
         teleportationProvider.enabled = true;
         snapTurnProvider.enabled = true;
@@ -1559,6 +1620,14 @@ public class EventManager : MonoBehaviour
         if (stageText != null)
         {
             stageText.text = "Stage: " + stage; 
+        }
+    }
+
+    private void UpdateIndexText()
+    {
+        if (indexText != null)
+        {
+            indexText.text = "Index: " + currentExperimentalTrialIndex + " Count: " + experimentalTrials.Count;
         }
     }
 
