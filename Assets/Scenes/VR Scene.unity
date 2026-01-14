@@ -3309,6 +3309,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e05ab4246066a524cb21a7dbfff0da51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  participant: 1
   learningDirection: 0
   startingPoint: 0
   sensorimotorAlignment: 315

@@ -1,19 +1,24 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq.Expressions;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
+using UnityEngine.UIElements.Experimental;
 using UnityEngine.XR.Interaction.Toolkit;
+using static UnityEngine.GraphicsBuffer;
 using static UnityEngine.ParticleSystem;
 using static UnityEngine.Rendering.DebugUI;
 
 public class EventManager : MonoBehaviour
 {
     [Header("Settings")]
+    public int participant; //participant number
     public int learningDirection; // LD in degrees
     public int startingPoint; // 0 for bottom floor, 1 for top floor
     public int sensorimotorAlignment; // 90 or 315 degrees
@@ -83,6 +88,10 @@ public class EventManager : MonoBehaviour
     [SerializeField] private TMP_Text text315Bottom;
     [SerializeField] private TMP_Text text315Top;
 
+    private float startTime;
+    private float pointingLatency;
+    private int trialNumber = 1;
+
 
     [Header("Feedback UI")]
     [SerializeField] private TMP_Text feedbackText;
@@ -132,9 +141,59 @@ public class EventManager : MonoBehaviour
         }
     }
 
+    public class PointingDataCombo
+    {
+        //data outputs
+        public string participant;
+        public string learningDirection;
+        public string startingPoint;
+        public string imaginedDirection;
+        public string condition;
+        public string trialType;
+        public string trialOrder;
+        public string trialNumber;
+        public string facingObject;
+        public string facingObjectLocation;
+        public string targetObject;
+        public string targetObjectLocation;
+        public string latency;
+        public string horizontalCorrectAngle;
+        public string horizontalResponseAngle;
+        public string horizontalPointingError;
+        public string horizontalAbsPointingError;
+        public string verticalCorrectAngle;
+        public string verticalResponseAngle;
+        public string verticalPointingError;
+        public string verticalAbsPointingError;
 
-    
-
+        public PointingDataCombo(string parti, string learnDir, string startPoi, string imagDir, string con, string trialTyp,
+            string trialOrd, string trialNum, string facing, string facingLoc, string target, string targetLoc, string lat,
+            string horizCorrectAng, string horizResponseAng, string horizPointingErr, string horizAbsPointingErr,
+            string vertCorrectAng, string vertResponseAng, string vertPointingErr, string vertAbsPointingErr)
+        {
+            participant = parti;
+            learningDirection = learnDir;
+            startingPoint = startPoi;
+            imaginedDirection = imagDir;
+            condition = con;
+            trialType = trialTyp;
+            trialOrder = trialOrd;
+            trialNumber = trialNum;
+            facingObject = facing;
+            facingObjectLocation = facingLoc;
+            targetObject = target;
+            targetObjectLocation = targetLoc;
+            latency = lat;
+            horizontalCorrectAngle = horizCorrectAng;
+            horizontalResponseAngle = horizResponseAng;
+            horizontalPointingError = horizPointingErr;
+            horizontalAbsPointingError = horizAbsPointingErr;
+            verticalCorrectAngle = vertCorrectAng;
+            verticalResponseAngle = vertResponseAng;
+            verticalPointingError = vertPointingErr;
+            verticalAbsPointingError = vertAbsPointingErr;
+        }
+    }
 
 
     // Start is called before the first frame update
@@ -265,6 +324,7 @@ public class EventManager : MonoBehaviour
 
                             // Advance to next trial
                             currentPracticeTrialIndex++;
+                            trialNumber++;
                             ShowNextPracticeTrial();
 
                             // Reset hold timer
@@ -422,6 +482,7 @@ public class EventManager : MonoBehaviour
                 // Only process input if there are remaining trials
                 if (currentExperimentalTrialIndex < experimentalTrials.Count && !isMoving)
                 {
+                    startTime = Time.time;
                     ExperimentalTrial currentTrial = experimentalTrials[currentExperimentalTrialIndex];
 
                     if (rightPrimaryButton.IsPressed())
@@ -1244,6 +1305,7 @@ public class EventManager : MonoBehaviour
     //==== DATA LOGGING ====\\
     private void PointFromTo(ExperimentalTrial trial)
     {
+        pointingLatency = Time.time - startTime;
 
         Vector3 participantPos = xrCamera.position; // standingTransform
         Vector3 facingPos = trial.facingObject.transform.position; //facingTransform
@@ -1256,7 +1318,8 @@ public class EventManager : MonoBehaviour
         Vector3 partToFace = facingPos - participantPos;
 
         //horizontal target angle
-        Vector3 partToTarget = targetPos - participantPos;
+        Vector3 partToTargetFull = targetPos - participantPos;
+        Vector3 partToTarget = partToTargetFull;
 
         // Imagined facing angle
         Vector3 partToImagine = Vector3.zero;
@@ -1273,40 +1336,66 @@ public class EventManager : MonoBehaviour
         }
 
         //horizontal pointing angle
-        Vector3 handPointing = handEndPos - handStartPos;
+        Vector3 handPointingFull = handEndPos - handStartPos;
+        Vector3 handPointing = handPointingFull;
 
         // Convert to horizontal plane
         partToFace.y = partToTarget.y = partToImagine.y = handPointing.y = 0f;
 
         // Calculate signed angles
-        float correct = Vector3.SignedAngle(partToFace, partToTarget, Vector3.up);
-        float response = Vector3.SignedAngle(partToImagine, handPointing, Vector3.up);
+        float horizontalCorrectAngle = Vector3.SignedAngle(partToFace, partToTarget, Vector3.up);
+        float horizontalResponseAngle = Vector3.SignedAngle(partToImagine, handPointing, Vector3.up);
 
         // Calculate angled errors between actual and response
-        float horizErrorSigned = Mathf.DeltaAngle(correct, response);
+        float horizErrorSigned = Mathf.DeltaAngle(horizontalCorrectAngle, horizontalResponseAngle);
         float horizErrorAbs = Mathf.Abs(horizErrorSigned);
 
-
-
-        ////vertical target angle (downward is negative angle (0--90); upward is positive angle (0-90))
-        //float verticalAngle_target = CalculateVerticalSignedAngle(partToTarget);
-
-        ////vertical pointing angle
-        //float verticalAngle_pointing = CalculateVerticalSignedAngle(handPointing);
-
-        ////vertical pointing error
-        //float verticalDirection_error = verticalAngle_pointing - verticalAngle_target;
-
-        ////vertical absolute pointing error
-        //float verticalDirection_abs_error = Mathf.Abs(verticalDirection_error);
+        // Calculate vertical error
+        float verticalCorrectAngle = CalculateVerticalSignedAngle(partToTargetFull);
+        float verticalResponseAngle = CalculateVerticalSignedAngle(handPointingFull);
+        float verticalErrorSigned = verticalResponseAngle - verticalCorrectAngle;
+        float verticalErrorAbs = Mathf.Abs(verticalErrorSigned);
 
         // ---- DEBUG --- Log the errors for stages 9, 11, 14, 16 ---
         if (stage == 9 || stage == 11 || stage == 14 || stage == 16)
         {
-            Debug.Log($"Trial {currentExperimentalTrialIndex + 1}: horizErrorSigned = {horizErrorSigned}, horizErrorAbs = {horizErrorAbs}");
+            Debug.Log($"Trial {currentExperimentalTrialIndex + 1}: horizErrorSigned = {horizErrorSigned}, horizErrorAbs = {horizErrorAbs}, vertErrorSigned = {verticalErrorSigned}, vertErrorAbs = {verticalErrorAbs}, latency = {pointingLatency}");
         }
-    }
 
+        PointingDataCombo SavingDataCombo = new PointingDataCombo(participant.ToString(), learningDirection.ToString(), startingPoint.ToString(), sensorimotorAlignment.ToString(), condition.ToString(), trial.trialType.ToString(), trialOrder.ToString(),
+            trialNumber.ToString(), trial.facingObject.name.ToString(), trial.facingObject.tag.ToString(), trial.pointingObject.name.ToString(), trial.pointingObject.tag.ToString(), pointingLatency.ToString(), horizontalCorrectAngle.ToString(),
+            horizontalResponseAngle.ToString(), horizErrorSigned.ToString(), horizErrorAbs.ToString(), verticalCorrectAngle.ToString(), verticalResponseAngle.ToString(), verticalErrorSigned.ToString(), verticalErrorAbs.ToString());
+
+        //Export data from Unity to CSV file in Asset/Resource folder
+#if UNITY_EDITOR
+        string filePath = @"Assets/Resources/ExperimentResults/Pointing_saved_data.csv";
+#else
+        string filePath = Application.persistentDataPath + "/Pointing_saved_data.csv";
+#endif
+
+        // Write header ONCE
+        if (!File.Exists(filePath))
+        {
+            File.WriteAllText(filePath,
+                "participant,learningDirection,startingPoint,imaginedDirection,condition," +
+                "trialType,trialOrder,trialNumber,facingObject,facingObjectLocation," +
+                "targetObject,targetObjectLocation,latency," +
+                "horizontalCorrectAngle,horizontalResponseAngle,horizontalError,horizontalAbsError," +
+                "verticalCorrectAngle,verticalResponseAngle,verticalError,verticalAbsError\n");
+        }
+
+        File.AppendAllText(filePath, SavingDataCombo.participant + "," + SavingDataCombo.learningDirection
+            + "," + SavingDataCombo.startingPoint + "," + SavingDataCombo.imaginedDirection
+            + "," + SavingDataCombo.condition + "," + SavingDataCombo.trialType
+            + "," + SavingDataCombo.trialOrder + "," + SavingDataCombo.trialNumber
+            + "," + SavingDataCombo.facingObject + "," + SavingDataCombo.facingObjectLocation
+            + "," + SavingDataCombo.targetObject + "," + SavingDataCombo.targetObjectLocation
+            + "," + SavingDataCombo.latency + "," + SavingDataCombo.horizontalCorrectAngle + "," + SavingDataCombo.horizontalResponseAngle
+            + "," + SavingDataCombo.horizontalPointingError + "," + SavingDataCombo.horizontalAbsPointingError
+            + "," + SavingDataCombo.verticalCorrectAngle + "," + SavingDataCombo.verticalResponseAngle
+            + "," + SavingDataCombo.verticalPointingError + "," + SavingDataCombo.verticalAbsPointingError
+             + "\n");
+    }
 
     private float CalculateVerticalSignedAngle(Vector3 Direction)
     {
@@ -1326,10 +1415,6 @@ public class EventManager : MonoBehaviour
 
         return verticalAngle;
     }
-    
-
-
-
 
     //==== GENERAL METHODS ====\\
     private IEnumerator TurnParticipantLDGradual(float targetYaw, float turnDuration)
