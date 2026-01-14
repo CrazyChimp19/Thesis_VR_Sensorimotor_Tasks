@@ -1280,6 +1280,12 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 5011543959505417424}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &331787636 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9058623345637998370, guid: 803dfcd221fefb44fadfbf08ce0f995d,
+    type: 3}
+  m_PrefabInstance: {fileID: 5011543959505417424}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &362958578
 GameObject:
   m_ObjectHideFlags: 0
@@ -3188,6 +3194,12 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 338451379945202680}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &919889241 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 177032884168200685, guid: e5e00e3a2ffb4ed4cb999cdd1df22788,
+    type: 3}
+  m_PrefabInstance: {fileID: 338451379945202680}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &939283097
 GameObject:
   m_ObjectHideFlags: 0
@@ -3345,6 +3357,8 @@ MonoBehaviour:
   testTrialText: {fileID: 1689847113}
   trialInstructor90: {fileID: 25574585}
   trialInstructor315: {fileID: 1976105411}
+  sensorimotorObject90: {fileID: 919889241}
+  sensorimotorObject315: {fileID: 331787636}
   text90Bottom: {fileID: 1173651499}
   text90Top: {fileID: 787893547}
   text315Bottom: {fileID: 1750576373}
@@ -8031,7 +8045,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1976105412
 Transform:
   m_ObjectHideFlags: 0

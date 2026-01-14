@@ -76,6 +76,8 @@ public class EventManager : MonoBehaviour
 
     [SerializeField] private GameObject trialInstructor90;
     [SerializeField] private GameObject trialInstructor315;
+    [SerializeField] private Transform sensorimotorObject90;
+    [SerializeField] private Transform sensorimotorObject315;
     [SerializeField] private TMP_Text text90Bottom;
     [SerializeField] private TMP_Text text90Top;
     [SerializeField] private TMP_Text text315Bottom;
@@ -129,6 +131,11 @@ public class EventManager : MonoBehaviour
             trialType = type;
         }
     }
+
+
+    
+
+
 
     // Start is called before the first frame update
     void Awake()
@@ -421,11 +428,10 @@ public class EventManager : MonoBehaviour
                     {
                         holdTimer += Time.deltaTime;
 
-                        if (holdTimer >= 0.2)
+                        if (holdTimer >= holdDuration)
                         {
-                            // Check if pointing is correct
-                            //bool correct = IsPointingCorrect(currentTrial);
-                            //ShowFeedback(correct);
+                            // Calculate and log errors
+                            PointFromTo(currentTrial);
 
                             // Advance to next trial
                             currentExperimentalTrialIndex++;
@@ -1235,6 +1241,96 @@ public class EventManager : MonoBehaviour
     }
 
 
+    //==== DATA LOGGING ====\\
+    private void PointFromTo(ExperimentalTrial trial)
+    {
+
+        Vector3 participantPos = xrCamera.position; // standingTransform
+        Vector3 facingPos = trial.facingObject.transform.position; //facingTransform
+        Vector3 targetPos = trial.pointingObject.transform.position; // targetTransform
+        Vector3 handStartPos = pointingHand.Find("handStartPivot").position;
+        Vector3 handEndPos = pointingHand.Find("handEndPivot").position;
+
+
+        //horizontal facing angle (starting from X-positive axis, incresing angle with counter clock-wise (0-360))
+        Vector3 partToFace = facingPos - participantPos;
+
+        //horizontal target angle
+        Vector3 partToTarget = targetPos - participantPos;
+
+        // Imagined facing angle
+        Vector3 partToImagine = Vector3.zero;
+
+        if (sensorimotorAlignment == 90)
+        {
+            Vector3 imaginedFacing = sensorimotorObject90.position;
+            partToImagine = imaginedFacing - participantPos;
+        }
+        else if (sensorimotorAlignment == 315)
+        {
+            Vector3 imaginedFacing = sensorimotorObject315.position;
+            partToImagine = imaginedFacing - participantPos;
+        }
+
+        //horizontal pointing angle
+        Vector3 handPointing = handEndPos - handStartPos;
+
+        // Convert to horizontal plane
+        partToFace.y = partToTarget.y = partToImagine.y = handPointing.y = 0f;
+
+        // Calculate signed angles
+        float correct = Vector3.SignedAngle(partToFace, partToTarget, Vector3.up);
+        float response = Vector3.SignedAngle(partToImagine, handPointing, Vector3.up);
+
+        // Calculate angled errors between actual and response
+        float horizErrorSigned = Mathf.DeltaAngle(correct, response);
+        float horizErrorAbs = Mathf.Abs(horizErrorSigned);
+
+
+
+        ////vertical target angle (downward is negative angle (0--90); upward is positive angle (0-90))
+        //float verticalAngle_target = CalculateVerticalSignedAngle(partToTarget);
+
+        ////vertical pointing angle
+        //float verticalAngle_pointing = CalculateVerticalSignedAngle(handPointing);
+
+        ////vertical pointing error
+        //float verticalDirection_error = verticalAngle_pointing - verticalAngle_target;
+
+        ////vertical absolute pointing error
+        //float verticalDirection_abs_error = Mathf.Abs(verticalDirection_error);
+
+        // ---- DEBUG --- Log the errors for stages 9, 11, 14, 16 ---
+        if (stage == 9 || stage == 11 || stage == 14 || stage == 16)
+        {
+            Debug.Log($"Trial {currentExperimentalTrialIndex + 1}: horizErrorSigned = {horizErrorSigned}, horizErrorAbs = {horizErrorAbs}");
+        }
+    }
+
+
+    private float CalculateVerticalSignedAngle(Vector3 Direction)
+    {
+        float verticalAngle = Vector3.Angle(Direction, Vector3.up);
+        if (Direction.y < 0)
+        {
+            verticalAngle = -verticalAngle;
+        }
+        if (verticalAngle <= 0)
+        {
+            verticalAngle = verticalAngle + 90f;
+        }
+        else
+        {
+            verticalAngle = 90f - verticalAngle;
+        }
+
+        return verticalAngle;
+    }
+    
+
+
+
+
     //==== GENERAL METHODS ====\\
     private IEnumerator TurnParticipantLDGradual(float targetYaw, float turnDuration)
     {
@@ -1479,24 +1575,6 @@ public class EventManager : MonoBehaviour
             (list[i], list[rand]) = (list[rand], list[i]);
         }
     }
-
-    //private void ShuffleTrials(List<PracticeTrial> list)
-    //{
-    //    for (int i = 0; i < list.Count; i++)
-    //    {
-    //        int rand = UnityEngine.Random.Range(i, list.Count);
-    //        (list[i], list[rand]) = (list[rand], list[i]);
-    //    }
-    //}
-
-    //private void ShuffleTrials(List<ExperimentalTrial> list)
-    //{
-    //    for (int i = 0; i < list.Count; i++)
-    //    {
-    //        int rand = UnityEngine.Random.Range(i, list.Count);
-    //        (list[i], list[rand]) = (list[rand], list[i]);
-    //    }
-    //}
 
     private void ShuffleTrials<T>(List<T> list)
     {
