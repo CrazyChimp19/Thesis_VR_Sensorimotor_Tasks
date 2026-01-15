@@ -324,7 +324,6 @@ public class EventManager : MonoBehaviour
 
                             // Advance to next trial
                             currentPracticeTrialIndex++;
-                            trialNumber++;
                             ShowNextPracticeTrial();
 
                             // Reset hold timer
@@ -482,7 +481,6 @@ public class EventManager : MonoBehaviour
                 // Only process input if there are remaining trials
                 if (currentExperimentalTrialIndex < experimentalTrials.Count && !isMoving)
                 {
-                    startTime = Time.time;
                     ExperimentalTrial currentTrial = experimentalTrials[currentExperimentalTrialIndex];
 
                     if (rightPrimaryButton.IsPressed())
@@ -492,10 +490,12 @@ public class EventManager : MonoBehaviour
                         if (holdTimer >= holdDuration)
                         {
                             // Calculate and log errors
+                            pointingLatency = Time.time - startTime - holdDuration;
                             PointFromTo(currentTrial);
 
                             // Advance to next trial
                             currentExperimentalTrialIndex++;
+                            trialNumber++;
                             ShowNextExperimentalTrial();
 
                             // Reset hold timer
@@ -764,8 +764,6 @@ public class EventManager : MonoBehaviour
         TeleportationAnchor startAnchor = startingPoint == 0 ? Bottom_LearningDirection : Top_LearningDirection;
         TeleportToAnchor(startAnchor);
     }
-
-
 
 
 
@@ -1116,6 +1114,11 @@ public class EventManager : MonoBehaviour
             return;
         }
 
+        if (!isMoving)
+        {
+            startTime = Time.time;
+        }
+
         // After the first 8 trials, teleport to the other floor
         // WRITE IF STATEMENTS FOR THE CORRECT MOVING BETWEEN FLOORS!!
         switch (trialType)
@@ -1305,8 +1308,6 @@ public class EventManager : MonoBehaviour
     //==== DATA LOGGING ====\\
     private void PointFromTo(ExperimentalTrial trial)
     {
-        pointingLatency = Time.time - startTime;
-
         Vector3 participantPos = xrCamera.position; // standingTransform
         Vector3 facingPos = trial.facingObject.transform.position; //facingTransform
         Vector3 targetPos = trial.pointingObject.transform.position; // targetTransform
@@ -1359,7 +1360,7 @@ public class EventManager : MonoBehaviour
         // ---- DEBUG --- Log the errors for stages 9, 11, 14, 16 ---
         if (stage == 9 || stage == 11 || stage == 14 || stage == 16)
         {
-            Debug.Log($"Trial {currentExperimentalTrialIndex + 1}: horizErrorSigned = {horizErrorSigned}, horizErrorAbs = {horizErrorAbs}, vertErrorSigned = {verticalErrorSigned}, vertErrorAbs = {verticalErrorAbs}, latency = {pointingLatency}");
+            Debug.Log($"Trial {trialNumber}: horizErrorSigned = {horizErrorSigned}, horizErrorAbs = {horizErrorAbs}, vertErrorSigned = {verticalErrorSigned}, vertErrorAbs = {verticalErrorAbs}, latency = {pointingLatency}");
         }
 
         PointingDataCombo SavingDataCombo = new PointingDataCombo(participant.ToString(), learningDirection.ToString(), startingPoint.ToString(), sensorimotorAlignment.ToString(), condition.ToString(), trial.trialType.ToString(), trialOrder.ToString(),
@@ -1468,11 +1469,15 @@ public class EventManager : MonoBehaviour
         snapTurnProvider.enabled = false;
 
         // ---- Phase 1: rotate ONCE to learning direction ----
-        yield return StartCoroutine(TurnParticipantLDGradual(learningDirection, liftRotationDuration));
+        if (stage < 9) 
+        {
+            yield return StartCoroutine(TurnParticipantLDGradual(learningDirection, liftRotationDuration));
 
 
-        // ---- Wait so participant registers orientation ----
-        yield return new WaitForSeconds(liftDelayAfterRotation);
+            // ---- Wait so participant registers orientation ----
+            yield return new WaitForSeconds(liftDelayAfterRotation);
+        }
+        
 
         // ---- Phase 2: make floors transparent ----
         if (condition == 1 && stage <= 7)
@@ -1520,6 +1525,8 @@ public class EventManager : MonoBehaviour
         {
             MovePanelInFrontCamera(panelToSpawnAfterLift);
         }
+
+        startTime = Time.time;
     }
 
     public void TeleportPlayerToNextFloor()
