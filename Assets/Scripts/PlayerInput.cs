@@ -1,12 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.XR.CoreUtils;
 using UnityEngine;
 
 public class PlayerInput : MonoBehaviour
 {
     public TMP_InputField inputField; // Text field to show input
     public EventManager eventManager;
+
+    [SerializeField] private GameObject panelLearningDirection;
+    [SerializeField] private GameObject panelStartingPoint;
+    [SerializeField] private GameObject panelSensorimotorAlignment;
+    [SerializeField] private GameObject panelCondition;
+    [SerializeField] private GameObject panelTrialOrder;
 
     // Start is called before the first frame update
     void Start()
@@ -42,11 +49,50 @@ public class PlayerInput : MonoBehaviour
         {
             eventManager.participant = participantNumber;
             Debug.Log("Participant Number Set: " + participantNumber);
-            gameObject.SetActive(false);
+            panelLearningDirection.SetActive(true);
         }
         else
         {
             Debug.LogWarning("Invalid participant number entered!");
         }
+    }
+
+    public void SetLearningDirection(int degrees)
+    {
+        eventManager.learningDirection = degrees;
+        panelLearningDirection.SetActive(false);
+        Debug.Log("Learning direction Set: " + degrees);
+        panelStartingPoint.SetActive(true);
+    }
+
+    public void SetStartingPoint(int value)
+    {
+        eventManager.startingPoint = value;
+        panelStartingPoint.SetActive(false);
+        Debug.Log("Starting point Set: " + value);
+        panelSensorimotorAlignment.SetActive(true);
+    }
+
+    public void SetSensorimotorAlignment(int value)
+    {
+        eventManager.sensorimotorAlignment = value;
+        panelSensorimotorAlignment.SetActive(false);
+        Debug.Log("Alignment set: " + value);
+        panelCondition.SetActive(true);
+    }
+
+    public void SetCondition(int value)
+    {
+        eventManager.condition = value;
+        panelCondition.SetActive(false);
+        Debug.Log("Condition Set: " + value);
+        panelTrialOrder.SetActive(true);
+    }
+
+    public void SetTrialOrder(int value)
+    {
+        eventManager.trialOrder = value;
+        Debug.Log("Trial order Set: " + value);
+        gameObject.SetActive(false);
     }
 }

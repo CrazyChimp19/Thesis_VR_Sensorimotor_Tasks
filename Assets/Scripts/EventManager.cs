@@ -209,14 +209,6 @@ public class EventManager : MonoBehaviour
             type: InputActionType.Button,
             binding: "<XRController>{RightHand}/primaryButton"
         );
-
-        currentFloor = (int)startingPoint;
-
-        //---- TEST TRIAL GENERATION
-        //TestAlignedTrials();
-        //TestMisalignedTrials();
-        //TestSemiAlignedTrials();
-        //TestSemiMisalignedTrials();
     }
 
     // Update is called once per frame
@@ -224,13 +216,7 @@ public class EventManager : MonoBehaviour
     {
         // ---- OUTLINES ---- //
         UpdateOutlines();
-
-        //==== !!!!! FOR TESTING PURPOSES, REMOVE LATER! !!!!! ====\\
-        if (stage == 1)
-        {
-            stage =+ 6;
-        }
-
+                
         //==== LEARNING PHASE ===\\
         // Stage 2 handles the first room in the learning phase
         if (stage == 2 && !panelSpawned)
@@ -369,6 +355,20 @@ public class EventManager : MonoBehaviour
         }
 
         //==== EXPERIMENTAL PHASE ====\\
+
+        //---- Turn off meshrenderer objects ----
+        if (stage == 8) 
+        { 
+            foreach (GameObject obj in practiceObjects) 
+            { 
+                MeshRenderer renderer = obj.GetComponent<MeshRenderer>(); 
+                if (renderer != null) 
+                { 
+                    renderer.enabled = false; 
+                } 
+            } 
+        }
+
         //---- Initialize the correct experimental trial types for each stage ----
         if (stage == 8 || stage == 10 || stage == 13 || stage == 15)
         {
@@ -516,7 +516,10 @@ public class EventManager : MonoBehaviour
         }
     }
 
-
+    public void SetParticipant(int value)
+    {
+        participant = value;
+    }
 
     //==== LEARNING PHASE ====\\
     private void TeleportToAnchor(TeleportationAnchor targetAnchor)
@@ -553,7 +556,9 @@ public class EventManager : MonoBehaviour
         {
             targetAnchor = Top_LearningDirection;
         }
-     
+
+        currentFloor = startingPoint;
+
         TeleportToAnchor(targetAnchor);
         SpawnPanelInFrontAnchor(targetAnchor, panel);
         AddStage();
@@ -1533,6 +1538,7 @@ public class EventManager : MonoBehaviour
     {
         isMoving = true;
         int targetFloor = currentFloor == 0 ? 1 : 0;
+        Debug.Log($"targetfloor: {targetFloor}, currentfloor: {currentFloor}");
         StartCoroutine(MovePlayerVertically(targetFloor));
 
         AddStage();
