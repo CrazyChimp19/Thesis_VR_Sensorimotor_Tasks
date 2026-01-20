@@ -21,6 +21,11 @@ public class ButtonUI : MonoBehaviour
         }
     }
 
+    public void GoBackToLearningPhase()
+    {
+        eventManager.BackToLearningPhase();
+    }
+
     public void TeleportNextFloorOnButtonClicked()
     {
         eventManager.TeleportPlayerToNextFloor();

@@ -142,8 +142,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: This is the learning phase. Currently, you are on the <TOP/BOTTOM> floor.
-    Look around the room and learn all object's locations.
+  m_text: "Please repeat the same process as you did on the other floor. \n\nNote
+    the direction you start in and use it as reference point and learn all object's
+    location in this room. Note that the objects in the other room again have gotten
+    an outline around them. "
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -170,8 +172,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 10
-  m_fontSizeBase: 10
+  m_fontSize: 7
+  m_fontSizeBase: 7
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -277,8 +279,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'If you are confident you will remember this room''s layout correctly,
-    press "BUTTON" to start the test trials. '
+  m_text: "If you are confident you have remember this room's layout correctly, HOLD
+    the \"A\" button to start the test trials. \n\nYou will automatically be turned
+    towards your starting direction and be moved towards the floor you started in."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -305,8 +308,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 9
-  m_fontSizeBase: 9
+  m_fontSize: 7.2
+  m_fontSizeBase: 7.2
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -452,7 +455,7 @@ RectTransform:
   m_GameObject: {fileID: 5074396150044954908}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.266861, y: 1.2193632, z: 1}
+  m_LocalScale: {x: 0.266861, y: 0.8624434, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8293818342438137043}
@@ -460,7 +463,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 72.40018, y: -32.69989}
+  m_AnchoredPosition: {x: 72.40018, y: -37.4}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3477624716570944676
@@ -936,7 +939,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!114 &4719229320739166863
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1013,7 +1016,7 @@ RectTransform:
   m_GameObject: {fileID: 7177052786443715799}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.26702797, y: 1.2196, z: 1}
+  m_LocalScale: {x: 0.26702797, y: 0.9923153, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7654487339902984537}
@@ -1021,7 +1024,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 72.4, y: -32.7}
+  m_AnchoredPosition: {x: 72.4, y: -35.6}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4861028923851275912

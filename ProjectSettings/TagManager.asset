@@ -8,6 +8,7 @@ TagManager:
   - Bottom
   - Top
   - Transparent
+  - Stand
   layers:
   - Default
   - TransparentFX

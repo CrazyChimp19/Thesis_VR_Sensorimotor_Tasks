@@ -27,7 +27,7 @@ RectTransform:
   m_GameObject: {fileID: 514719840880353824}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.0000303, y: 1.0001456, z: 1}
+  m_LocalScale: {x: 1.0000303, y: 1.4445102, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5971994573064033849}
@@ -65,8 +65,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Physically face the object x and point with the controller to object y.
-    Then hold A to lock your answer and continue to the next trial.
+  m_text: 'Physically face the object x and point with the controller to object y.
+    Then HOLD the "A" button to lock your answer and continue to the next trial.
+
+
+    You
+    will be moved automatically to the next room after 8 trials and when the trials
+    are done.'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -93,8 +98,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 9
-  m_fontSizeBase: 9
+  m_fontSize: 6.3
+  m_fontSizeBase: 6.3
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -129,7 +134,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 53.07607, y: -18.48927, z: 53.353973, w: -20.48444}
+  m_margin: {x: 53.07607, y: -8.628857, z: 53.353973, w: -7.828438}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -525,7 +530,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!114 &4164367389476726577
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1072,7 +1077,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Now, the testtrials will start. You will be conducting tasks in the form
+  m_text: Now, practice trials will start. You will be conducting tasks in the form
     of "face object x, point to object y.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

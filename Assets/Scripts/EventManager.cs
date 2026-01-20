@@ -78,6 +78,7 @@ public class EventManager : MonoBehaviour
     private int currentExperimentalTrialIndex = 0;
     private bool experimentRunning = false;
     private bool initialized = false;
+    private bool redoLearning = false;
 
     [SerializeField] private GameObject trialInstructor90;
     [SerializeField] private GameObject trialInstructor315;
@@ -216,7 +217,12 @@ public class EventManager : MonoBehaviour
     {
         // ---- OUTLINES ---- //
         UpdateOutlines();
-                
+
+        //if (stage == 1 && !redoLearning)
+        //{
+        //    stage = +6;
+        //}
+
         //==== LEARNING PHASE ===\\
         // Stage 2 handles the first room in the learning phase
         if (stage == 2 && !panelSpawned)
@@ -237,13 +243,18 @@ public class EventManager : MonoBehaviour
             }
         }
 
-        if (stage == 3 && !panelSpawned)
+        if (stage == 3 && !panelSpawned && !redoLearning)
         {
             if (!isMoving)
             {
                 SpawnPanelInFrontCamera(panelLearningPhase2);
                 panelSpawned = true;
             }
+        }
+
+        if (stage == 3 && redoLearning)
+        {
+            AddStage();
         }
 
         if (stage == 4 && !panelSpawned)
@@ -264,13 +275,20 @@ public class EventManager : MonoBehaviour
             }
         }
 
-        if (stage == 5 && !panelSpawned)
+        if (stage == 5 && !panelSpawned && !redoLearning)
         {
             if (!isMoving)
             {
                 SpawnPanelInFrontCamera(panelTestTrials);
                 panelSpawned = true;
             }
+        }
+
+        if (stage == 5 && redoLearning && !isMoving)
+        {
+            stage = 7;
+            UpdateStageText();
+            redoLearning = false;
         }
 
         //==== PRACTICE TRIAL PHASE ===\\
@@ -324,6 +342,8 @@ public class EventManager : MonoBehaviour
             }
         }
 
+        
+
 
         //==== BREAK TIME ====\\
         // 5 minute break to prevent motion sickness
@@ -359,6 +379,7 @@ public class EventManager : MonoBehaviour
         //---- Turn off meshrenderer objects ----
         if (stage == 8) 
         { 
+            // Disable the target objects (Turn of renderer instead of objects completely so the script can still find them within the scene)
             foreach (GameObject obj in practiceObjects) 
             { 
                 MeshRenderer renderer = obj.GetComponent<MeshRenderer>(); 
@@ -366,7 +387,19 @@ public class EventManager : MonoBehaviour
                 { 
                     renderer.enabled = false; 
                 } 
-            } 
+            }
+
+            GameObject[] standObjects = GameObject.FindGameObjectsWithTag("Stand");
+
+            // Disable all stands
+            foreach (GameObject obj in standObjects)
+            {
+                MeshRenderer rendererStand = obj.GetComponent<MeshRenderer>();
+                if (rendererStand != null)
+                {
+                    rendererStand.enabled = false;
+                }
+            }
         }
 
         //---- Initialize the correct experimental trial types for each stage ----
@@ -516,10 +549,6 @@ public class EventManager : MonoBehaviour
         }
     }
 
-    public void SetParticipant(int value)
-    {
-        participant = value;
-    }
 
     //==== LEARNING PHASE ====\\
     private void TeleportToAnchor(TeleportationAnchor targetAnchor)
@@ -750,9 +779,7 @@ public class EventManager : MonoBehaviour
         feedbackText.color = correct ? Color.green : Color.red;
 
         feedbackText.text =
-            $"{result}\n" +
-            $"Horizontal error: {lastHorizontalError:F1}�\n" +
-            $"Vertical error: {lastVerticalError:F1}�";
+            $"{result}";
 
         StartCoroutine(HideFeedbackAfterDelay());
     }
@@ -770,7 +797,14 @@ public class EventManager : MonoBehaviour
         TeleportToAnchor(startAnchor);
     }
 
-
+    public void BackToLearningPhase()
+    {
+        stage = 2;
+        Debug.Log("Stage set to: " + stage);
+        redoLearning = true;
+        panelSpawned = false;
+        UpdateStageText();
+    }
 
     //==== EXPERIMENTAL PHASE ====\\
     private List<ExperimentalTrial> GenerateExperimentalAlignedTrials(List<GameObject> allObjects)
