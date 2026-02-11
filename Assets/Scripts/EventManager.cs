@@ -102,6 +102,7 @@ public class EventManager : MonoBehaviour
 
     [Header("XR Input")]
     private InputAction rightPrimaryButton;
+    [SerializeField] private XRBaseController rightController;
     private bool panelSpawned;
     private bool EPPanelSpawned;
 
@@ -216,15 +217,21 @@ public class EventManager : MonoBehaviour
     void Update()
     {
         // ---- OUTLINES ---- //
-        UpdateOutlines();
+        //UpdateOutlines();
 
         //if (stage == 1 && !redoLearning)
         //{
         //    stage = +6;
+        //    //TestAlignedTrials();
         //}
 
         //==== LEARNING PHASE ===\\
         // Stage 2 handles the first room in the learning phase
+        if (stage == 2)
+        {
+            snapTurnProvider.enabled = false;
+        }
+
         if (stage == 2 && !panelSpawned)
         { 
             if (rightPrimaryButton.IsPressed())
@@ -329,6 +336,7 @@ public class EventManager : MonoBehaviour
                             // Advance to next trial
                             currentPracticeTrialIndex++;
                             ShowNextPracticeTrial();
+                            rightController.SendHapticImpulse(0.5f, 0.05f); // amplitude, duration
 
                             // Reset hold timer
                             holdTimer = 0f;
@@ -388,6 +396,20 @@ public class EventManager : MonoBehaviour
                     renderer.enabled = false; 
                 } 
             }
+
+            // Turn of meshrenderer child component of fan
+            GameObject fan = GameObject.Find("fan");
+            Transform rFan = fan.transform.Find("R Fan");
+
+            if (rFan != null)
+            {
+                Renderer r = rFan.GetComponent<Renderer>();
+                if (r != null)
+                {
+                    r.enabled = false;
+                }
+            }
+
 
             GameObject[] standObjects = GameObject.FindGameObjectsWithTag("Stand");
 
@@ -530,6 +552,7 @@ public class EventManager : MonoBehaviour
                             currentExperimentalTrialIndex++;
                             trialNumber++;
                             ShowNextExperimentalTrial();
+                            rightController.SendHapticImpulse(0.5f, 0.05f); // amplitude, duration
 
                             // Reset hold timer
                             holdTimer = 0f;
@@ -1402,9 +1425,28 @@ public class EventManager : MonoBehaviour
             Debug.Log($"Trial {trialNumber}: horizErrorSigned = {horizErrorSigned}, horizErrorAbs = {horizErrorAbs}, vertErrorSigned = {verticalErrorSigned}, vertErrorAbs = {verticalErrorAbs}, latency = {pointingLatency}");
         }
 
-        PointingDataCombo SavingDataCombo = new PointingDataCombo(participant.ToString(), learningDirection.ToString(), startingPoint.ToString(), sensorimotorAlignment.ToString(), condition.ToString(), trial.trialType.ToString(), trialOrder.ToString(),
-            trialNumber.ToString(), trial.facingObject.name.ToString(), trial.facingObject.tag.ToString(), trial.pointingObject.name.ToString(), trial.pointingObject.tag.ToString(), pointingLatency.ToString(), horizontalCorrectAngle.ToString(),
-            horizontalResponseAngle.ToString(), horizErrorSigned.ToString(), horizErrorAbs.ToString(), verticalCorrectAngle.ToString(), verticalResponseAngle.ToString(), verticalErrorSigned.ToString(), verticalErrorAbs.ToString());
+        PointingDataCombo SavingDataCombo = new PointingDataCombo(
+            participant.ToString(),
+            learningDirection.ToString(),
+            startingPoint.ToString(),
+            sensorimotorAlignment.ToString(),
+            condition.ToString(),
+            trial.trialType.ToString(),
+            trialOrder.ToString(),
+            trialNumber.ToString(),
+            trial.facingObject.name.ToString(),
+            trial.facingObject.tag.ToString(),
+            trial.pointingObject.name.ToString(),
+            trial.pointingObject.tag.ToString(),
+            pointingLatency.ToString(CultureInfo.InvariantCulture),
+            horizontalCorrectAngle.ToString(CultureInfo.InvariantCulture),
+            horizontalResponseAngle.ToString(CultureInfo.InvariantCulture),
+            horizErrorSigned.ToString(CultureInfo.InvariantCulture),
+            horizErrorAbs.ToString(CultureInfo.InvariantCulture),
+            verticalCorrectAngle.ToString(CultureInfo.InvariantCulture),
+            verticalResponseAngle.ToString(CultureInfo.InvariantCulture),
+            verticalErrorSigned.ToString(CultureInfo.InvariantCulture),
+            verticalErrorAbs.ToString(CultureInfo.InvariantCulture));
 
         //Export data from Unity to CSV file in Asset/Resource folder
 #if UNITY_EDITOR
@@ -1505,18 +1547,21 @@ public class EventManager : MonoBehaviour
         Vector3 targetPos = new Vector3(startPos.x, targetY, startPos.z);
 
         teleportationProvider.enabled = false;
-        snapTurnProvider.enabled = false;
+        //snapTurnProvider.enabled = false;
 
         // ---- Phase 1: rotate ONCE to learning direction ----
-        if (stage < 9) 
-        {
-            yield return StartCoroutine(TurnParticipantLDGradual(learningDirection, liftRotationDuration));
+        //if (stage < 9) 
+        //{
+        //    yield return StartCoroutine(TurnParticipantLDGradual(learningDirection, liftRotationDuration));
 
 
-            // ---- Wait so participant registers orientation ----
-            yield return new WaitForSeconds(liftDelayAfterRotation);
-        }
-        
+        //    // ---- Wait so participant registers orientation ----
+        //    yield return new WaitForSeconds(liftDelayAfterRotation);
+        //}
+
+        // ---- Wait so participant registers orientation ----
+        yield return new WaitForSeconds(liftDelayAfterRotation);
+
 
         // ---- Phase 2: make floors transparent ----
         if (condition == 1 && stage <= 7)
@@ -1556,7 +1601,7 @@ public class EventManager : MonoBehaviour
         }
 
         teleportationProvider.enabled = true;
-        snapTurnProvider.enabled = true;
+        //snapTurnProvider.enabled = true;
         isMoving = false;
 
         // ---- Spawn panel after lift ----

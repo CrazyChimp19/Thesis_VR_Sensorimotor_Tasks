@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Ready to Teleport?
+  m_text: Ready to move?
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -164,7 +164,7 @@ RectTransform:
   m_GameObject: {fileID: 5346399772653832375}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.023444831, y: 0.008083516, z: 0.53331}
+  m_LocalScale: {x: 0.015569947, y: 0.0053683436, z: 0.3541765}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4988996316253837238}
@@ -220,7 +220,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!114 &3835105124394731299
 MonoBehaviour:
   m_ObjectHideFlags: 0

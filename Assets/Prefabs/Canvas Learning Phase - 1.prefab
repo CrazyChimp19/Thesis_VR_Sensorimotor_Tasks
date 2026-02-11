@@ -34,7 +34,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.0005187988, y: -14.4}
+  m_AnchoredPosition: {x: -0.0005187988, y: -0.7}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1411526058229267279
@@ -65,13 +65,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'If you are confident you have remembered this room''s layout correctly,
-    HOLD the "A" button (lowest button on top of your controller) to get the option
-    to teleport to the next floor.
-
-
-    When teleporting, you will automatically
-    turn towards your reference direction and be moved ot the next floor.'
+  m_text: "Once you are confident you remember the room\u2019s layout, hold the \u201CA\u201D
+    button (the lowest button on the top of your controller) to move to the next
+    floor.\n\nRemember:\n- Only use your head and upper body to look around\n- Keep
+    your feet stationary\n- Memorize the location of all objects in the room"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -98,8 +95,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 6.7
-  m_fontSizeBase: 6.7
+  m_fontSize: 6.5
+  m_fontSizeBase: 6.5
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -416,12 +413,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Also, please note the direction you start in and remember this direction
-    as reference point.
-
-
-    Again, you can use the analog stick to turn around
-    in increments of 45 degrees.'
+  m_text: To learn the layout of this room, look around and memorize the location
+    of all objects in the room as accurately as possible.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -520,7 +513,7 @@ RectTransform:
   m_GameObject: {fileID: 2241601361701461002}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.028629137, y: 0.01792739, z: 0.09260971}
+  m_LocalScale: {x: 0.023821445, y: 0.014916843, z: 0.077057764}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3941573972740890466}
@@ -530,7 +523,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -0.00067139}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &783510885034775714
@@ -663,8 +656,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00034332275}
-  m_SizeDelta: {x: 0, y: -0.00065613}
+  m_AnchoredPosition: {x: 0, y: 2.84}
+  m_SizeDelta: {x: 0, y: 27.72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1712437150041433887
 CanvasRenderer:
@@ -1561,14 +1554,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'You have arrived in the learning phase. Your left controller will be disabled,
-    please alert the instructor and give him the controller.
+  m_text: 'You have entered the learning phase. Your objective is to learn the layout
+    of this room.
 
 
-    Your objective
-    is to learn the layout of this room. Remember the location of all objects as
-    well as you can. Note that when you will look above/below you, you will see outlines
-    from the objects on the other floor.'
+    Movement using your controller has been disabled. Do not
+    turn around using your feet. You may turn your head and upper body to look around,
+    but keep your feet in their current position.'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
