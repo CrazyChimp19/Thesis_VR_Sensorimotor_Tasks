@@ -36,6 +36,7 @@ public class EventManager : MonoBehaviour
     [SerializeField] private GameObject panelTestTrials; // assign your prefab in the inspector
     [SerializeField] private GameObject panelTestTrialInstructor; // assign your prefab in the inspector
     [SerializeField] private GameObject panelTakeABreak; // assign your prefab in the inspector
+    [SerializeField] private GameObject panelRedoLearningPhase; // assign your prefab in the inspector
     [SerializeField] private GameObject teleportButtonPanel1;
     [SerializeField] private GameObject teleportButtonPanel2;
     [SerializeField] private GameObject teleportButtonStartEP;
@@ -102,6 +103,7 @@ public class EventManager : MonoBehaviour
 
     [Header("XR Input")]
     private InputAction rightPrimaryButton;
+    private InputAction rightSecondaryButton;
     [SerializeField] private XRBaseController rightController;
     private bool panelSpawned;
     private bool EPPanelSpawned;
@@ -210,6 +212,11 @@ public class EventManager : MonoBehaviour
         rightPrimaryButton = new InputAction(
             type: InputActionType.Button,
             binding: "<XRController>{RightHand}/primaryButton"
+        );
+
+        rightSecondaryButton = new InputAction(
+            type: InputActionType.Button,
+            binding: "<XRController>{RightHand}/secondaryButton"
         );
     }
 
@@ -340,6 +347,17 @@ public class EventManager : MonoBehaviour
 
                             // Reset hold timer
                             holdTimer = 0f;
+                        }
+                    }
+                    else if (rightSecondaryButton.IsPressed())
+                    {
+                        holdTimer += Time.deltaTime;
+
+                        if (holdTimer >= holdDuration)
+                        {
+                            //panelTestTrialInstructor.SetActive(false);
+                            panelRedoLearningPhase.SetActive(true);
+                            MovePanelInFrontCamera(panelRedoLearningPhase);
                         }
                     }
                     else
@@ -822,9 +840,37 @@ public class EventManager : MonoBehaviour
 
     public void BackToLearningPhase()
     {
+        if (stage == 7)
+        {
+            redoLearning = true;
+        }
+
+        if (stage < 7)
+        {
+            GameObject Anchor0 = GameObject.Find("Bottom_LearningDirection");
+            GameObject Anchor1 = GameObject.Find("Top_LearningDirection");
+            TeleportationAnchor targetAnchor = null;
+
+            if (startingPoint == 0)
+            {
+                targetAnchor = Bottom_LearningDirection;
+            }
+            else if (startingPoint == 1)
+            {
+                targetAnchor = Top_LearningDirection;
+            }
+            
+            currentFloor = startingPoint;
+            TeleportToAnchor(targetAnchor);
+            Anchor0.SetActive(false);
+            Anchor1.SetActive(false);
+            testTrialText.text = "";
+            panelTestTrialInstructor.SetActive(false);
+            practiceRunning = false;
+        }
+
         stage = 2;
-        Debug.Log("Stage set to: " + stage);
-        redoLearning = true;
+        Debug.Log("Stage set to: " + stage);       
         panelSpawned = false;
         UpdateStageText();
     }
@@ -1736,12 +1782,14 @@ public class EventManager : MonoBehaviour
 
     private void OnEnable()
     {
-        rightPrimaryButton?.Enable();
+        rightPrimaryButton.Enable();
+        rightSecondaryButton.Enable();
     }
 
     private void OnDisable()
     {
-        rightPrimaryButton?.Disable();
+        rightPrimaryButton.Disable();
+        rightSecondaryButton.Disable();
     }
 
     private void ShuffleGameObjects(List<GameObject> list)

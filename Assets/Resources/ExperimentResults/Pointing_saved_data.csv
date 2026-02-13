@@ -1,0 +1,12 @@
+participant,learningDirection,startingPoint,imaginedDirection,condition,trialType,trialOrder,trialNumber,facingObject,facingObjectLocation,targetObject,targetObjectLocation,latency,horizontalCorrectAngle,horizontalResponseAngle,horizontalError,horizontalAbsError,verticalCorrectAngle,verticalResponseAngle,verticalError,verticalAbsError
+1,0,0,90,0,Aligned,0,1,dumbbell,Bottom,soccerball,Bottom,4.441147,-180,24.79988,-155.2001,155.2001,1.563461,-2.600212,-4.163673,4.163673
+1,0,0,90,0,Aligned,0,2,lamp,Bottom,dumbbell,Bottom,0.0008850098,-90.01698,26.99984,117.0168,117.0168,0.6824875,-2.200218,-2.882706,2.882706
+1,0,0,90,0,Aligned,0,3,plant,Bottom,dumbbell,Bottom,0.0003662109,89.80482,22.59983,-67.20499,67.20499,0.6824875,-0.6002197,-1.282707,1.282707
+1,0,0,90,0,Aligned,0,4,plant,Bottom,soccerball,Bottom,0.002929688,-90.1782,28.79975,118.978,118.978,1.563461,3.1996,1.636139,1.636139
+1,0,0,90,0,Aligned,0,5,dumbbell,Bottom,lamp,Bottom,0.009918213,90.01698,28.99975,-61.01724,61.01724,-1.322556,3.1996,4.522156,4.522156
+1,0,0,90,0,Aligned,0,6,dumbbell,Bottom,plant,Bottom,0.006774902,-89.80482,28.79976,118.6046,118.6046,-1.301277,3.999657,5.300934,5.300934
+1,0,0,90,0,Aligned,0,7,plant,Bottom,lamp,Bottom,0.008865356,179.8209,28.79976,-151.0211,151.0211,-1.322556,4.199684,5.52224,5.52224
+1,0,0,90,0,Aligned,0,8,soccerball,Bottom,dumbbell,Bottom,0.001571655,180,28.19976,-151.8002,151.8002,0.6824875,5.399742,4.717255,4.717255
+1,0,0,90,0,Aligned,0,9,lamp,Bottom,soccerball,Bottom,0.002990723,90,27.79977,-62.20023,62.20023,1.563461,6.199806,4.636345,4.636345
+1,0,0,90,0,Aligned,0,10,soccerball,Bottom,plant,Bottom,0.003372192,90.1782,27.79976,-62.37845,62.37845,-1.301277,6.599831,7.901108,7.901108
+1,0,0,90,0,Aligned,0,11,soccerball,Bottom,lamp,Bottom,0.01046753,-90,21.99985,111.9998,111.9998,-1.322556,16.9998,18.32236,18.32236
