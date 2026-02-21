@@ -75,9 +75,31 @@ public class PlayerInput : MonoBehaviour
 
     public void SetSensorimotorAlignment(int value)
     {
-        eventManager.sensorimotorAlignment = value;
+        if (value == 0)
+        {
+            if (eventManager.learningDirection == 0)
+            {
+                eventManager.sensorimotorAlignment = 90;
+            }
+            else if (eventManager.learningDirection == 225)
+            {
+                eventManager.sensorimotorAlignment = 315;
+            }
+        }
+        else if (value == 1)
+        {
+            if (eventManager.learningDirection == 0)
+            {
+                eventManager.sensorimotorAlignment = 225;
+            }
+            else if (eventManager.learningDirection == 225)
+            {
+                eventManager.sensorimotorAlignment = 90;
+            }
+        }
+
         panelSensorimotorAlignment.SetActive(false);
-        Debug.Log("Alignment set: " + value);
+        Debug.Log("Alignment set: " + eventManager.sensorimotorAlignment);
         panelCondition.SetActive(true);
     }
 

@@ -21,7 +21,7 @@ public class EventManager : MonoBehaviour
     public int participant; //participant number
     public int learningDirection; // LD in degrees
     public int startingPoint; // 0 for bottom floor, 1 for top floor
-    public int sensorimotorAlignment; // 90 or 315 degrees
+    public int sensorimotorAlignment; // 90, 225 or 315 degrees
     public int condition; // 0 for solid, 1 for transparent
     public int trialOrder; // 0 for 1,2,3,4 ; 1 for 4,3,2,1
 
@@ -61,7 +61,7 @@ public class EventManager : MonoBehaviour
     private bool isMoving = false; // tracks if the lift is running
 
     [Header("Practice Trials")]
-    [SerializeField] private List<GameObject> practiceObjects; // 8 objects in Inspector
+    [SerializeField] private List<GameObject> practiceObjects; // 8 objects in Inspector: element 0 must be LD object Bottom floor, element 4 must be LD object Top floor. 
     [SerializeField] private float holdDuration = 1f;
     [SerializeField] private float pointingToleranceDegrees = 15f;
     [SerializeField] private Transform pointingHand; // your VR controller
@@ -82,11 +82,15 @@ public class EventManager : MonoBehaviour
     private bool redoLearning = false;
 
     [SerializeField] private GameObject trialInstructor90;
+    [SerializeField] private GameObject trialInstructor225;
     [SerializeField] private GameObject trialInstructor315;
     [SerializeField] private Transform sensorimotorObject90;
+    [SerializeField] private Transform sensorimotorObject225;
     [SerializeField] private Transform sensorimotorObject315;
     [SerializeField] private TMP_Text text90Bottom;
     [SerializeField] private TMP_Text text90Top;
+    [SerializeField] private TMP_Text text225Bottom;
+    [SerializeField] private TMP_Text text225Top;
     [SerializeField] private TMP_Text text315Bottom;
     [SerializeField] private TMP_Text text315Top;
 
@@ -226,11 +230,11 @@ public class EventManager : MonoBehaviour
         // ---- OUTLINES ---- //
         //UpdateOutlines();
 
-        //if (stage == 1 && !redoLearning)
-        //{
-        //    stage = +6;
-        //    //TestAlignedTrials();
-        //}
+        if (stage == 1 && !redoLearning)
+        {
+            stage = +6;
+            //TestAlignedTrials();
+        }
 
         //==== LEARNING PHASE ===\\
         // Stage 2 handles the first room in the learning phase
@@ -1206,6 +1210,10 @@ public class EventManager : MonoBehaviour
         {
             trialInstructor90.SetActive(true);
         }
+        else if (sensorimotorAlignment == 225)
+        {
+            trialInstructor225.SetActive(true);
+        }
         else if (sensorimotorAlignment == 315)
         {
             trialInstructor315.SetActive(true);
@@ -1339,6 +1347,17 @@ public class EventManager : MonoBehaviour
                     text90Top.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
                 }
             }
+            else if (sensorimotorAlignment == 225)
+            {
+                if (trial.facingObject.tag == "Bottom")
+                {
+                    text225Bottom.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+                else if (trial.facingObject.tag == "Top")
+                {
+                    text225Top.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+            }
             else if (sensorimotorAlignment == 315)
             {
                 if (trial.facingObject.tag == "Bottom")
@@ -1364,6 +1383,17 @@ public class EventManager : MonoBehaviour
                     text90Bottom.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
                 }
             }
+            else if (sensorimotorAlignment == 225)
+            {
+                if (trial.facingObject.tag == "Bottom")
+                {
+                    text225Top.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+                else if (trial.facingObject.tag == "Top")
+                {
+                    text225Bottom.text = $"Imagine you are facing the {trial.facingObject.name}, point to the {trial.pointingObject.name}";
+                }
+            }
             else if (sensorimotorAlignment == 315)
             {
                 if (trial.facingObject.tag == "Bottom")
@@ -1387,6 +1417,10 @@ public class EventManager : MonoBehaviour
             {
                 trialInstructor90.SetActive(false);
             }
+            else if (sensorimotorAlignment == 225)
+            {
+                trialInstructor225.SetActive(false);
+            }
             else if (sensorimotorAlignment == 315)
             {
                 trialInstructor315.SetActive(false);
@@ -1398,6 +1432,11 @@ public class EventManager : MonoBehaviour
             {
                 text90Top.text = "";
                 text90Bottom.text = "";
+            }
+            else if (sensorimotorAlignment == 225)
+            {
+                text225Top.text = "";
+                text225Bottom.text = "";
             }
             else if (sensorimotorAlignment == 315)
             {
@@ -1417,25 +1456,23 @@ public class EventManager : MonoBehaviour
     private void PointFromTo(ExperimentalTrial trial)
     {
         Vector3 participantPos = xrCamera.position; // standingTransform
+        //Debug.Log($"participant y before: {participantPos.y}");
         Vector3 facingPos = trial.facingObject.transform.position; //facingTransform
         Vector3 targetPos = trial.pointingObject.transform.position; // targetTransform
         Vector3 handStartPos = pointingHand.Find("handStartPivot").position;
         Vector3 handEndPos = pointingHand.Find("handEndPivot").position;
 
-
-        //horizontal facing angle (starting from X-positive axis, incresing angle with counter clock-wise (0-360))
-        Vector3 partToFace = facingPos - participantPos;
-
-        //horizontal target angle
-        Vector3 partToTargetFull = targetPos - participantPos;
-        Vector3 partToTarget = partToTargetFull;
-
-        // Imagined facing angle
+        // Imagined facing angle (vector of sensorimotor direction participant stands in)
         Vector3 partToImagine = Vector3.zero;
 
         if (sensorimotorAlignment == 90)
         {
             Vector3 imaginedFacing = sensorimotorObject90.position;
+            partToImagine = imaginedFacing - participantPos;
+        }
+        else if (sensorimotorAlignment == 225)
+        {
+            Vector3 imaginedFacing = sensorimotorObject225.position;
             partToImagine = imaginedFacing - participantPos;
         }
         else if (sensorimotorAlignment == 315)
@@ -1444,15 +1481,45 @@ public class EventManager : MonoBehaviour
             partToImagine = imaginedFacing - participantPos;
         }
 
+        //horizontal facing angle (starting from X-positive axis, incresing angle with counter clock-wise (0-360))
+        Vector3 partToFace = facingPos - participantPos;
+
+        //horizontal target angle
+        Vector3 partToTarget = targetPos - participantPos;
+        Vector3 partToTargetHor = partToTarget;
+
+        // Semi-misaligned and misaligned target angle
+        Vector3 partToTargetVert = Vector3.zero;
+        if (trial.trialType == "Semi_Misaligned" || trial.trialType == "Misaligned")
+        {
+            if (trial.facingObject.tag == "Bottom")
+            {
+                float partHeight = participantPos.y - topFloorY;
+                float partShiftedHeight = partHeight + bottomFloorY;
+                participantPos.y = partShiftedHeight;
+                partToTargetVert = targetPos - participantPos;
+            }
+            else if (trial.facingObject.tag == "Top")
+            {
+                float partHeight = participantPos.y - bottomFloorY;
+                float partShiftedHeight = partHeight + topFloorY;
+                participantPos.y = partShiftedHeight;
+                partToTargetVert = targetPos - participantPos;
+            }
+        }
+
+        //Debug.Log($"participant y after: {participantPos.y}");
+        
+
         //horizontal pointing angle
         Vector3 handPointingFull = handEndPos - handStartPos;
         Vector3 handPointing = handPointingFull;
 
         // Convert to horizontal plane
-        partToFace.y = partToTarget.y = partToImagine.y = handPointing.y = 0f;
+        partToFace.y = partToTargetHor.y = partToImagine.y = handPointing.y = 0f;
 
         // Calculate signed angles
-        float horizontalCorrectAngle = Vector3.SignedAngle(partToFace, partToTarget, Vector3.up);
+        float horizontalCorrectAngle = Vector3.SignedAngle(partToFace, partToTargetHor, Vector3.up);
         float horizontalResponseAngle = Vector3.SignedAngle(partToImagine, handPointing, Vector3.up);
 
         // Calculate angled errors between actual and response
@@ -1460,7 +1527,16 @@ public class EventManager : MonoBehaviour
         float horizErrorAbs = Mathf.Abs(horizErrorSigned);
 
         // Calculate vertical error
-        float verticalCorrectAngle = CalculateVerticalSignedAngle(partToTargetFull);
+        float verticalCorrectAngle = 0f;
+        if (trial.trialType == "Aligned" || trial.trialType == "Semi_Aligned")
+        {
+            verticalCorrectAngle = CalculateVerticalSignedAngle(partToTarget);
+        }
+        else if (trial.trialType == "Semi_Misaligned" || trial.trialType == "Misaligned")
+        {
+            verticalCorrectAngle = CalculateVerticalSignedAngle(partToTargetVert);
+        }
+                    
         float verticalResponseAngle = CalculateVerticalSignedAngle(handPointingFull);
         float verticalErrorSigned = verticalResponseAngle - verticalCorrectAngle;
         float verticalErrorAbs = Mathf.Abs(verticalErrorSigned);
