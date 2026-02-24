@@ -3164,7 +3164,7 @@ PrefabInstance:
     - target: {fileID: 6598815579406187037, guid: 18ddb545287c546e19cc77dc9fbb2189,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7788,6 +7788,37 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 24.370588, y: -5.644446, z: 10.634423}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &474830151
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 474830152}
+  m_Layer: 0
+  m_Name: ==== OBJECTS - B ====
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &474830152
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 474830151}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.7429574, y: 2.863577, z: 55.83638}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -13162,6 +13193,16 @@ MonoBehaviour:
   condition: 0
   trialOrder: 0
   teleportationProvider: {fileID: 161287640}
+  objectsFirst:
+  - {fileID: 137263242401181855}
+  - {fileID: 5004799430578097534}
+  - {fileID: 6441002315900547428}
+  - {fileID: 1687129628296861101}
+  - {fileID: 3470290255186338508}
+  - {fileID: 2382945628159076263}
+  - {fileID: 146504465}
+  - {fileID: 2471434268074790284}
+  objectsSecond: []
   panelLearningPhase1: {fileID: 2241601361701461002, guid: 274cd1a5a8ccb854cb0e267fbd8f3c40,
     type: 3}
   panelLearningPhase2: {fileID: 6132178678626276484, guid: c8113547c0bc2554b91fcac65a72d60a,
@@ -13190,15 +13231,6 @@ MonoBehaviour:
   transparentFloorMaterial: {fileID: 2100000, guid: eca1a757e89729b41b5386d77d62b9e7,
     type: 2}
   liftDelayAfterRotation: 0.5
-  practiceObjects:
-  - {fileID: 137263242401181855}
-  - {fileID: 5004799430578097534}
-  - {fileID: 6441002315900547428}
-  - {fileID: 1687129628296861101}
-  - {fileID: 3470290255186338508}
-  - {fileID: 2382945628159076263}
-  - {fileID: 146504465}
-  - {fileID: 2471434268074790284}
   holdDuration: 1
   pointingToleranceDegrees: 15
   pointingHand: {fileID: 1140411293}
@@ -13215,6 +13247,8 @@ MonoBehaviour:
   text225Top: {fileID: 435243485}
   text315Bottom: {fileID: 1750576373}
   text315Top: {fileID: 575898865}
+  startSecondPhasePanel: {fileID: 5380312266003945039, guid: 4fe3fbc5967fe654f9961ca1e0c11963,
+    type: 3}
   feedbackText: {fileID: 451344319}
   feedbackDuration: 3
   rightController: {fileID: 1140411298}
@@ -19605,7 +19639,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1346031974
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21486,7 +21520,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1499851573
 RectTransform:
   m_ObjectHideFlags: 0
@@ -27291,7 +27325,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1878439860}
   m_Layer: 0
-  m_Name: ==== OBJECTS ====
+  m_Name: ==== OBJECTS - A ====
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -30815,3 +30849,4 @@ SceneRoots:
   - {fileID: 4337306703810686359}
   - {fileID: 6583291954576025605}
   - {fileID: 4429694712077388503}
+  - {fileID: 474830152}
