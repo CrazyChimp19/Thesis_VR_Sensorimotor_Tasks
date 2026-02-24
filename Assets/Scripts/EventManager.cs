@@ -230,11 +230,11 @@ public class EventManager : MonoBehaviour
         // ---- OUTLINES ---- //
         //UpdateOutlines();
 
-        if (stage == 1 && !redoLearning)
-        {
-            stage = +6;
-            //TestAlignedTrials();
-        }
+        //if (stage == 1 && !redoLearning)
+        //{
+        //    stage = +6;
+        //    //TestAlignedTrials();
+        //}
 
         //==== LEARNING PHASE ===\\
         // Stage 2 handles the first room in the learning phase
