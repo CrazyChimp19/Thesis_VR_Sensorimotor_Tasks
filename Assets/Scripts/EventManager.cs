@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Xml.Linq;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -80,20 +82,30 @@ public class EventManager : MonoBehaviour
     [SerializeField] private GameObject trialInstructor90;
     [SerializeField] private GameObject trialInstructor225;
     [SerializeField] private GameObject trialInstructor315;
-    [SerializeField] private Transform sensorimotorObject90;
-    [SerializeField] private Transform sensorimotorObject225;
-    [SerializeField] private Transform sensorimotorObject315;
+    [SerializeField] private GameObject sensorimotorObject90;
+    [SerializeField] private GameObject sensorimotorObject225;
+    [SerializeField] private GameObject sensorimotorObject315;
     [SerializeField] private TMP_Text text90Bottom;
     [SerializeField] private TMP_Text text90Top;
     [SerializeField] private TMP_Text text225Bottom;
     [SerializeField] private TMP_Text text225Top;
     [SerializeField] private TMP_Text text315Bottom;
     [SerializeField] private TMP_Text text315Top;
+    [SerializeField] private GameObject sensorimotorObject90B;
+    [SerializeField] private GameObject sensorimotorObject225B;
+    [SerializeField] private GameObject sensorimotorObject315B;
+
+    [SerializeField] private GameObject ldObject0;
+    [SerializeField] private GameObject ldObject225;
+    [SerializeField] private GameObject ldObject0B;
+    [SerializeField] private GameObject ldObject225B;
+
+    private ArrayList test;
 
     private List<ExperimentalTrial> experimentalTrials;
     private bool isTransparent = false;
     private int currentExperimentalTrialIndex = 0;
-    private bool experimentRunning = false;
+    private bool experimentRunning = false; 
     private bool initialized = false;
     private bool redoLearning = false;
 
@@ -104,7 +116,9 @@ public class EventManager : MonoBehaviour
     [Header("Second Part")]
     [SerializeField] private GameObject startSecondPhasePanel;
     private bool secondCondition = false;
-    
+    private bool endExperiment = false;
+    [SerializeField] private GameObject panelThanks;
+
 
     [Header("Feedback UI")]
     [SerializeField] private TMP_Text feedbackText;
@@ -239,9 +253,18 @@ public class EventManager : MonoBehaviour
 
         if (stage == 1 && !redoLearning && !secondCondition)
         {
-            stage = +14;
+            stage = +11;
             //TestAlignedTrials();
         }
+
+        //if (stage == 1)
+        //{
+        //    //TestAlignedTrials(objectsFirst);
+        //    //TestSemiAlignedTrials(objectsFirst);
+        //    TestMisalignedTrials(objectsFirst);
+        //    //TestSemiMisalignedTrials(objectsFirst);
+
+        //}
 
         //==== LEARNING PHASE ===\\
         // Stage 2 handles the first room in the learning phase
@@ -384,7 +407,7 @@ public class EventManager : MonoBehaviour
 
         //==== BREAK TIME ====\\
         // 5 minute break to prevent motion sickness
-        if (stage == 7 || stage == 12)
+        if (stage == 7) 
         {
             if (!isMoving && !panelSpawned)
             {
@@ -415,46 +438,77 @@ public class EventManager : MonoBehaviour
 
         //---- Turn off meshrenderer objects ----
         if (stage == 8) 
-        { 
+        {
             // Disable the target objects (Turn of renderer instead of objects completely so the script can still find them within the scene)
-            foreach (GameObject obj in objectsFirst) 
-            { 
-                MeshRenderer renderer = obj.GetComponent<MeshRenderer>(); 
-                if (renderer != null) 
-                { 
-                    renderer.enabled = false; 
-                } 
-            }
+            List<GameObject> selectedObjects = !secondCondition ? objectsFirst : objectsSecond;
 
-            // Turn of meshrenderer child component of fan
-            GameObject fan = GameObject.Find("fan");
-            Transform rFan = fan.transform.Find("R Fan");
-
-            if (rFan != null)
+            foreach (GameObject obj in selectedObjects)
             {
-                Renderer r = rFan.GetComponent<Renderer>();
-                if (r != null)
+                MeshRenderer[] renderers = obj.GetComponentsInChildren<MeshRenderer>(true);
+
+                foreach (MeshRenderer renderer in renderers)
                 {
-                    r.enabled = false;
+                    renderer.enabled = false;
                 }
             }
 
 
-            GameObject[] standObjects = GameObject.FindGameObjectsWithTag("Stand");
 
-            // Disable all stands
-            foreach (GameObject obj in standObjects)
+            //foreach (GameObject obj in selectedObjects) 
+            //{ 
+            //    MeshRenderer renderer = obj.GetComponent<MeshRenderer>(); 
+            //    if (renderer != null) 
+            //    { 
+            //        renderer.enabled = false; 
+            //    } 
+            //}
+
+            //// Turn of meshrenderer child component of fan
+            //GameObject fan = GameObject.Find("fan");
+            //Transform rFan = fan.transform.Find("R Fan");
+
+            //if (rFan != null)
+            //{
+            //    Renderer r = rFan.GetComponent<Renderer>();
+            //    if (r != null)
+            //    {
+            //        r.enabled = false;
+            //    }
+            //}
+
+            if (!secondCondition)
             {
-                MeshRenderer rendererStand = obj.GetComponent<MeshRenderer>();
-                if (rendererStand != null)
+                GameObject[] standObjects = GameObject.FindGameObjectsWithTag("Stand");
+
+                // Disable all stands
+                foreach (GameObject obj in standObjects)
                 {
-                    rendererStand.enabled = false;
+                    MeshRenderer rendererStand = obj.GetComponent<MeshRenderer>();
+                    if (rendererStand != null)
+                    {
+                        rendererStand.enabled = false;
+                    }
                 }
             }
+            else if (secondCondition)
+            {
+                GameObject[] standObjects = GameObject.FindGameObjectsWithTag("StandB");
+
+                // Disable all stands
+                foreach (GameObject obj in standObjects)
+                {
+                    MeshRenderer rendererStand = obj.GetComponent<MeshRenderer>();
+                    if (rendererStand != null)
+                    {
+                        rendererStand.enabled = false;
+                    }
+                }
+            }
+            
         }
 
         //---- Initialize the correct experimental trial types for each stage ----
-        if (stage == 8 || stage == 10 || stage == 13 || stage == 15)
+        if (stage == 8 || stage == 10) 
         {
             if (!initialized)
             {
@@ -486,54 +540,110 @@ public class EventManager : MonoBehaviour
                     case (8):
                         if (trialOrder == 0)
                         {
-                            experimentalTrials = GenerateExperimentalAlignedTrials(objectsFirst);
+                            if (!secondCondition)
+                            {
+                                experimentalTrials = GenerateAlignedSemiAlignedTrials(objectsFirst);
+                            }
+                            else
+                            {
+                                experimentalTrials = GenerateAlignedSemiAlignedTrials(objectsSecond);
+                            }
                             trialType = 1;
                         }
                         else if (trialOrder == 1)
                         {
-                            experimentalTrials = GenerateExperimentalMisalignedTrials(objectsFirst);
-                            trialType = 4;
+                            if (!secondCondition)
+                            {
+                                experimentalTrials = GenerateMisalignedSemiMisalignedTrials(objectsFirst);
+                            }
+                            else
+                            {
+                                experimentalTrials = GenerateMisalignedSemiMisalignedTrials(objectsSecond);
+                            }
+                            trialType = 2;
                         }
                         break;
 
                     case (10):
                         if (trialOrder == 0)
                         {
-                            experimentalTrials = GenerateExperimentalSemiAlignedTrials(objectsFirst);
+                            if (!secondCondition)
+                            {
+                                experimentalTrials = GenerateMisalignedSemiMisalignedTrials(objectsFirst);
+                            }
+                            else
+                            {
+                                experimentalTrials = GenerateMisalignedSemiMisalignedTrials(objectsSecond);
+                            }
                             trialType = 2;
                         }
                         else if (trialOrder == 1)
                         {
-                            experimentalTrials = GenerateExperimentalSemiMisalignedTrials(objectsFirst);
-                            trialType = 3;
-                        }
-                        break;
-
-                    case (13):
-                        if (trialOrder == 0)
-                        {
-                            experimentalTrials = GenerateExperimentalSemiMisalignedTrials(objectsFirst);
-                            trialType = 3;
-                        }
-                        else if (trialOrder == 1)
-                        {
-                            experimentalTrials = GenerateExperimentalSemiAlignedTrials(objectsFirst);
-                            trialType = 2;
-                        }
-                        break;
-
-                    case (15):
-                        if (trialOrder == 0)
-                        {
-                            experimentalTrials = GenerateExperimentalMisalignedTrials(objectsFirst);
-                            trialType = 4;
-                        }
-                        else if (trialOrder == 1)
-                        {
-                            experimentalTrials = GenerateExperimentalAlignedTrials(objectsFirst);
+                            if (!secondCondition)
+                            {
+                                experimentalTrials = GenerateAlignedSemiAlignedTrials(objectsFirst);
+                            }
+                            else
+                            {
+                                experimentalTrials = GenerateAlignedSemiAlignedTrials(objectsSecond);
+                            }
                             trialType = 1;
                         }
                         break;
+
+                    //case (13):
+                    //    if (trialOrder == 0)
+                    //    {
+                    //        if (!secondCondition)
+                    //        {
+                    //            experimentalTrials = GenerateExperimentalSemiMisalignedTrials(objectsFirst);
+                    //        }
+                    //        else
+                    //        {
+                    //            experimentalTrials = GenerateExperimentalSemiMisalignedTrials(objectsSecond);
+                    //        }
+                    //        trialType = 3;
+                    //    }
+                    //    else if (trialOrder == 1)
+                    //    {
+                    //        if (!secondCondition)
+                    //        {
+                    //            experimentalTrials = GenerateExperimentalSemiAlignedTrials(objectsFirst);
+                    //        }
+                    //        else
+                    //        {
+                    //            experimentalTrials = GenerateExperimentalSemiAlignedTrials(objectsSecond);
+                    //        }
+                    //        trialType = 2;
+                    //    }
+                    //    break;
+
+                    //case (15):
+                    //    if (trialOrder == 0)
+                    //    {
+                    //        if (!secondCondition)
+                    //        {
+                    //            experimentalTrials = GenerateExperimentalMisalignedTrials(objectsFirst);
+                    //        }
+                    //        else
+                    //        {
+                    //            experimentalTrials = GenerateExperimentalMisalignedTrials(objectsSecond);
+                    //        }
+                    //        trialType = 4;
+                    //    }
+                    //    else if (trialOrder == 1)
+                    //    {
+                    //        if (!secondCondition)
+                    //        {
+                    //            experimentalTrials = GenerateExperimentalAlignedTrials(objectsFirst);
+                    //        }
+                    //        else
+                    //        {
+                    //            experimentalTrials = GenerateExperimentalAlignedTrials(objectsSecond);
+                    //        }
+                    //        trialType = 1;
+                    //    }
+                    //    break;
                 }
                
                 currentExperimentalTrialIndex = 0;
@@ -551,7 +661,7 @@ public class EventManager : MonoBehaviour
         }
         
         //---- Conduct the experimental trials ----
-        if (stage == 9 || stage == 11 || stage == 14 || stage == 16)
+        if (stage == 9 || stage == 11)
         {
             UpdateIndexText();
             // Start practice session once
@@ -595,8 +705,14 @@ public class EventManager : MonoBehaviour
             }
         }
 
+        // Set bool to true for ending the experiment
+        if (stage == 11 && secondCondition && !endExperiment)
+        {
+            endExperiment = true;
+        }
+
         // Reset everything for second part of the experiment
-        if (stage == 17 && !isMoving && !secondCondition)
+        if (stage == 12 && !isMoving && !secondCondition && !endExperiment)
         {
             // Turn off trial isntructors
             if (sensorimotorAlignment == 90)
@@ -643,7 +759,7 @@ public class EventManager : MonoBehaviour
             }
             
             // Reset all bools
-            practiceRunning = false;
+            practiceRunning = false; 
             experimentRunning = false;
             initialized = false;
             redoLearning = false;
@@ -657,7 +773,7 @@ public class EventManager : MonoBehaviour
             secondCondition = true;
         }
 
-        if (stage == 17 && secondCondition && !panelSpawned)
+        if (stage == 12 && secondCondition && !panelSpawned && !endExperiment)
         {
             // Spawn button to start the next phase
             if (rightPrimaryButton.IsPressed())
@@ -676,7 +792,14 @@ public class EventManager : MonoBehaviour
             }
         }
 
-        if (stage == 18)
+        if (stage == 12 && secondCondition && endExperiment && !isMoving && !panelSpawned)
+        {
+            panelThanks.SetActive(true);
+            MovePanelInFrontCamera(panelThanks);
+            panelSpawned = true;
+        }
+
+        if (stage == 13)
         {
             // Turn off objects first condition
             foreach (GameObject obj in objectsFirst)
@@ -686,7 +809,7 @@ public class EventManager : MonoBehaviour
 
             // Turn on objects second condition
             // Enable all stands
-            GameObject[] standObjects = GameObject.FindGameObjectsWithTag("Stand");
+            GameObject[] standObjects = GameObject.FindGameObjectsWithTag("StandB");
 
             foreach (GameObject obj in standObjects)
             {
@@ -820,7 +943,15 @@ public class EventManager : MonoBehaviour
 
     private void StartPracticeSession()
     {
-        practiceTrials = GeneratePracticeTrials(objectsFirst);
+        if (!secondCondition)
+        {
+            practiceTrials = GeneratePracticeTrials(objectsFirst);
+        }
+        else if (secondCondition)
+        {
+            practiceTrials = GeneratePracticeTrials(objectsSecond);
+        }
+
         currentPracticeTrialIndex = 0;
         holdTimer = 0f;
 
@@ -995,6 +1126,387 @@ public class EventManager : MonoBehaviour
     }
 
     //==== EXPERIMENTAL PHASE ====\\
+    public GameObject GetSensorimotorObject()
+    {
+        if (!secondCondition)
+        {
+            if (sensorimotorAlignment == 90)
+            {
+                return sensorimotorObject90;
+            }
+            else if (sensorimotorAlignment == 225)
+            {
+                return sensorimotorObject225;
+            }
+            else if (sensorimotorAlignment == 315)
+            {
+                return sensorimotorObject315;
+            }
+        }
+        else if (secondCondition)
+        {
+            if (sensorimotorAlignment == 90)
+            {
+                return sensorimotorObject90B;
+            }
+            else if (sensorimotorAlignment == 225)
+            {
+                return sensorimotorObject225B;
+            }
+            else if (sensorimotorAlignment == 315)
+            {
+                return sensorimotorObject315B;
+            }
+        }
+
+        return null;
+    }
+
+    public GameObject GetLearningDirectionObject()
+    {
+        if (!secondCondition)
+        {
+            if (learningDirection == 0)
+            {
+                return ldObject0;
+            }
+            else if (learningDirection == 225)
+            {
+                return ldObject225;
+            }
+        }
+        else if (secondCondition)
+        {
+            if (learningDirection == 0)
+            {
+                return ldObject0B;
+            }
+            else if (learningDirection == 225)
+            {
+                return ldObject225B;
+            }
+        }
+
+        return null;
+    }
+
+
+    private List<ExperimentalTrial> GenerateAlignedTrials(List<GameObject> allObjects)
+    {
+        GameObject sensorimotorAlignedObject = GetSensorimotorObject();
+        List<GameObject> targetObjects = new List<GameObject>(allObjects);
+        List<ExperimentalTrial> finalTrials = new List<ExperimentalTrial>();
+
+        targetObjects.Remove(sensorimotorAlignedObject);
+
+        foreach (GameObject obj in targetObjects)
+        {
+            finalTrials.Add(new ExperimentalTrial(sensorimotorAlignedObject, obj, "Aligned"));
+        }
+
+        ShuffleTrials(finalTrials);
+
+        return finalTrials;
+
+    }
+
+    private List<ExperimentalTrial> GenerateAlignedSemiAlignedTrials(List<GameObject> allObjects)
+    {
+        // ---- CREATION OF SEMI ALIGNED TRIALS
+        List<(int facing, int target)> trialDefinitionsTop = new();
+        List<(int facing, int target)> trialDefinitionsBottom = new();
+
+        // Define trials
+        if (sensorimotorAlignment == 90 && learningDirection == 0)
+        {
+            trialDefinitionsTop = new List<(int, int)>
+            {
+                (4,2), (6,0), (4,0), (6,2), (4,3), (4,7), (6,5), (6,1)
+            };
+
+            trialDefinitionsBottom = new List<(int, int)>
+            {
+                (1,3), (3,7), (5,1), (7,5), (1,0), (3,6), (5,2), (7,0)
+            };
+        }
+        else if (sensorimotorAlignment == 315 && learningDirection == 225)
+        {
+            trialDefinitionsTop = new List<(int, int)>
+            {
+                (6,0), (0,4), (2,6), (4,2), (6,5), (0,3), (2,7), (4,5)
+            };
+
+            trialDefinitionsBottom = new List<(int, int)>
+            {
+                (1,7), (3,5), (1,5), (3,7), (1,0), (1,4), (3,2), (3,6)
+            };
+        }
+        else if (sensorimotorAlignment == 225 && learningDirection == 0)
+        {
+            trialDefinitionsTop = new List<(int, int)>
+            {
+                (2,4), (4,0), (6,4), (2,6), (4,3), (6,7), (2,5), (4,1)
+            };
+
+            trialDefinitionsBottom = new List<(int, int)>
+            {
+                (7,1), (1,5), (3,7), (7,5), (1,0), (3,4), (7,2), (1,6)
+            };
+        }
+        else if (sensorimotorAlignment == 90 && learningDirection == 225)
+        {
+            trialDefinitionsTop = new List<(int, int)>
+            {
+                (4,6), (6,2), (0,4), (4,2), (6,5), (0,1), (4,7), (6,3)
+            };
+
+            trialDefinitionsBottom = new List<(int, int)>
+            {
+                (7,1), (1,5), (3,1), (7,3), (1,0), (3,4), (7,2), (1,6)
+            };
+        }
+
+        // Swap for second condition because of switched object locations
+        if (secondCondition)
+        {
+            (trialDefinitionsTop, trialDefinitionsBottom) = (trialDefinitionsBottom, trialDefinitionsTop);
+        }
+
+        List<ExperimentalTrial> trialsFirst = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> trialsSecond = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> finalTrials = new List<ExperimentalTrial>();
+
+        // Create trials
+        if (startingPoint == 1)
+        {
+            foreach (var trial in trialDefinitionsTop)
+            {
+                GameObject facingObj = allObjects[trial.facing];
+                GameObject targetObj = allObjects[trial.target];
+
+                trialsFirst.Add(new ExperimentalTrial(facingObj, targetObj, "Semi_Aligned"));
+            }
+
+            foreach (var trial in trialDefinitionsBottom)
+            {
+                GameObject facingObj = allObjects[trial.facing];
+                GameObject targetObj = allObjects[trial.target];
+
+                trialsSecond.Add(new ExperimentalTrial(facingObj, targetObj, "Semi_Aligned"));
+            }
+        }
+        else if (startingPoint == 0)
+        {
+            foreach (var trial in trialDefinitionsBottom)
+            {
+                GameObject facingObj = allObjects[trial.facing];
+                GameObject targetObj = allObjects[trial.target];
+
+                trialsFirst.Add(new ExperimentalTrial(facingObj, targetObj, "Semi_Aligned"));
+            }
+
+            foreach (var trial in trialDefinitionsTop)
+            {
+                GameObject facingObj = allObjects[trial.facing];
+                GameObject targetObj = allObjects[trial.target];
+
+                trialsSecond.Add(new ExperimentalTrial(facingObj, targetObj, "Semi_Aligned"));
+            }
+        }
+
+        // Add aligned trials
+        GameObject sensorimotorAlignedObject = GetSensorimotorObject();
+        List<ExperimentalTrial> toBeAdded = new List<ExperimentalTrial>();
+
+        if ((sensorimotorAlignedObject.tag == "Top" && startingPoint == 0) || (sensorimotorAlignedObject.tag == "Bottom" && startingPoint == 1))
+        {
+            // Add aliogned trials to correct block
+            trialsSecond.AddRange(GenerateAlignedTrials(allObjects));
+
+            // Shuffle trials
+            ShuffleTrials(trialsFirst);
+            ShuffleTrials(trialsSecond);
+
+            // Add to finalTrials
+            finalTrials.AddRange(trialsFirst);
+            finalTrials.AddRange(trialsSecond);
+        }
+        else if (sensorimotorAlignedObject.tag == "Top" && startingPoint == 1 || (sensorimotorAlignedObject.tag == "Bottom" && startingPoint == 0))
+        {
+            // Add aliogned trials to correct block
+            trialsFirst.AddRange(GenerateAlignedTrials(allObjects));
+
+            // Shuffle trials
+            ShuffleTrials(trialsFirst);
+            ShuffleTrials(trialsSecond);
+
+            // Add to finalTrials
+            finalTrials.AddRange(trialsFirst);
+            finalTrials.AddRange(trialsSecond);           
+        }
+
+        return finalTrials;
+    }
+
+    private List<ExperimentalTrial> GenerateSemiMisalignedTrials(List<GameObject> allObjects)
+    {
+        GameObject sensorimotorAlignedObject = GetSensorimotorObject();
+        List<GameObject> targetObjects = new List<GameObject>(allObjects);
+        List<ExperimentalTrial> finalTrials = new List<ExperimentalTrial>();
+
+        targetObjects.Remove(sensorimotorAlignedObject);
+
+        foreach (GameObject obj in targetObjects)
+        {
+            finalTrials.Add(new ExperimentalTrial(sensorimotorAlignedObject, obj, "Semi_Misaligned"));
+        }
+
+        ShuffleTrials(finalTrials);
+
+        return finalTrials;
+
+    }
+
+    private List<ExperimentalTrial> GenerateMisalignedSemiMisalignedTrials(List<GameObject> allObjects)
+    {
+        // ---- CREATION OF MISALIGNED TRIALS
+        List<(int facing, int target)> trialDefinitionsTop = new();
+        List<(int facing, int target)> trialDefinitionsBottom = new();
+
+        // Define trials
+        if (sensorimotorAlignment == 90 && learningDirection == 0)
+        {
+            trialDefinitionsTop = new List<(int, int)>
+            {
+                (1,4), (3,4), (5,2), (7,6), (1,7), (3,5), (5,1), (7,3)
+            };
+
+            trialDefinitionsBottom = new List<(int, int)>
+            {
+                (4,5), (4,1), (6,7), (6,3), (4,0), (4,6), (6,2), (6,4)
+            };
+        }
+        else if (sensorimotorAlignment == 315 && learningDirection == 225)
+        {
+            trialDefinitionsTop = new List<(int, int)>
+            {
+                (6,1), (0,1), (2,7), (4,3), (6,3), (0,5), (2,7), (4,1)
+            };
+
+            trialDefinitionsBottom = new List<(int, int)>
+            {
+                (1,2), (1,6), (3,4), (3,0), (1,5), (1,3), (3,7), (3,1)
+            };
+        }
+        else if (sensorimotorAlignment == 225 && learningDirection == 0)
+        {
+            trialDefinitionsTop = new List<(int, int)>
+            {
+                (3,2), (7,0), (1,4), (3,6), (1,7), (3,7), (7,1), (1,5)
+            };
+
+            trialDefinitionsBottom = new List<(int, int)>
+            {
+                (6,7), (2,7), (4,3), (6,1), (4,2), (6,2), (2,4), (4,0)
+            };
+        }
+        else if (sensorimotorAlignment == 90 && learningDirection == 225)
+        {
+            trialDefinitionsTop = new List<(int, int)>
+            {
+                (0,7), (4,5), (6,1), (0,3), (6,4), (0,4), (4,6), (6,2)
+            };
+
+            trialDefinitionsBottom = new List<(int, int)>
+            {
+                (3,4), (7,4), (1,0), (3,6), (1,7), (3,7), (7,1), (1,5)
+            };
+        }
+
+        // Swap for second condition because of switched object locations
+        if (secondCondition)
+        {
+            (trialDefinitionsTop, trialDefinitionsBottom) = (trialDefinitionsBottom, trialDefinitionsTop);
+        }
+
+        List<ExperimentalTrial> trialsFirst = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> trialsSecond = new List<ExperimentalTrial>();
+        List<ExperimentalTrial> finalTrials = new List<ExperimentalTrial>();
+
+        // Create trials
+        if (startingPoint == 1) 
+        {
+            foreach (var trial in trialDefinitionsTop)
+            {
+                GameObject facingObj = allObjects[trial.facing];
+                GameObject targetObj = allObjects[trial.target];
+
+                trialsFirst.Add(new ExperimentalTrial(facingObj, targetObj, "Misaligned"));
+            }
+
+            foreach (var trial in trialDefinitionsBottom)
+            {
+                GameObject facingObj = allObjects[trial.facing];
+                GameObject targetObj = allObjects[trial.target];
+
+                trialsSecond.Add(new ExperimentalTrial(facingObj, targetObj, "Misaligned"));
+            }
+        }
+        else if (startingPoint == 0)
+        {
+            foreach (var trial in trialDefinitionsBottom)
+            {
+                GameObject facingObj = allObjects[trial.facing];
+                GameObject targetObj = allObjects[trial.target];
+
+                trialsFirst.Add(new ExperimentalTrial(facingObj, targetObj, "Misaligned"));
+            }
+
+            foreach (var trial in trialDefinitionsTop)
+            {
+                GameObject facingObj = allObjects[trial.facing];
+                GameObject targetObj = allObjects[trial.target];
+
+                trialsSecond.Add(new ExperimentalTrial(facingObj, targetObj, "Misaligned"));
+            }
+        }
+
+
+        // Add aligned trials
+        GameObject sensorimotorAlignedObject = GetSensorimotorObject();
+        List<ExperimentalTrial> toBeAdded = new List<ExperimentalTrial>();
+
+        if ((sensorimotorAlignedObject.tag == "Top" && startingPoint == 0) || (sensorimotorAlignedObject.tag == "Bottom" && startingPoint == 1)) 
+        {
+            // Add aliogned trials to correct block
+            trialsFirst.AddRange(GenerateSemiMisalignedTrials(allObjects));
+
+            // Shuffle trials
+            ShuffleTrials(trialsFirst);
+            ShuffleTrials(trialsSecond);
+
+            // Add to finalTrials
+            finalTrials.AddRange(trialsFirst);
+            finalTrials.AddRange(trialsSecond);
+        }
+        else if (sensorimotorAlignedObject.tag == "Top" && startingPoint == 1 || (sensorimotorAlignedObject.tag == "Bottom" && startingPoint == 0))
+        {
+            // Add aliogned trials to correct block
+            trialsSecond.AddRange(GenerateSemiMisalignedTrials(allObjects));
+
+            // Shuffle trials
+            ShuffleTrials(trialsFirst);
+            ShuffleTrials(trialsSecond);
+
+            // Add to finalTrials
+            finalTrials.AddRange(trialsFirst);
+            finalTrials.AddRange(trialsSecond);
+        }
+
+        return finalTrials;
+    }
+
+
     private List<ExperimentalTrial> GenerateExperimentalAlignedTrials(List<GameObject> allObjects)
     {
         List<GameObject> bottomFloorObjects = new List<GameObject>();
@@ -1352,12 +1864,15 @@ public class EventManager : MonoBehaviour
 
         // After the first 8 trials, teleport to the other floor
         // WRITE IF STATEMENTS FOR THE CORRECT MOVING BETWEEN FLOORS!!
+        GameObject sensorimotorObject = GetSensorimotorObject();
+
         switch (trialType)
         {
+            // Aligned, Semi-Aligned: vertically aligned
             case 1:
-                if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225)) 
+                if ((startingPoint == 0 && sensorimotorObject.tag == "Bottom") || (startingPoint == 1 && sensorimotorObject.tag == "Top")) 
                 {
-                    if (currentExperimentalTrialIndex == 12)
+                    if (currentExperimentalTrialIndex == 15)
                     {
                         int targetFloor = currentFloor == 0 ? 1 : 0;
 
@@ -1365,9 +1880,9 @@ public class EventManager : MonoBehaviour
                         StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
                     }
                 }
-                else if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
+                else if ((startingPoint == 0 && sensorimotorObject.tag == "Top") || (startingPoint == 1 && sensorimotorObject.tag == "Bottom"))
                 {
-                    if (currentExperimentalTrialIndex == 9)
+                    if (currentExperimentalTrialIndex == 8)
                     {
                         int targetFloor = currentFloor == 0 ? 1 : 0;
 
@@ -1376,11 +1891,12 @@ public class EventManager : MonoBehaviour
                     }
                 }
                     break;
-
+            
+            // Semi-Misaligned, Misaligned: vertically misaligned
             case 2:
-                if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225))
+                if ((startingPoint == 0 && sensorimotorObject.tag == "Top") || (startingPoint == 1 && sensorimotorObject.tag == "Bottom"))
                 {
-                    if (currentExperimentalTrialIndex == 16)
+                    if (currentExperimentalTrialIndex == 15)
                     {
                         int targetFloor = currentFloor == 0 ? 1 : 0;
 
@@ -1388,32 +1904,9 @@ public class EventManager : MonoBehaviour
                         StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
                     }
                 }
-                else if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
+                else if ((startingPoint == 0 && sensorimotorObject.tag == "Bottom") || (startingPoint == 1 && sensorimotorObject.tag == "Top"))
                 {
-                    if (currentExperimentalTrialIndex == 12)
-                    {
-                        int targetFloor = currentFloor == 0 ? 1 : 0;
-
-                        // Start vertical movement and pass the panel to spawn after lift
-                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
-                    }
-                }
-                break;
-
-            case 3:
-                if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
-                {
-                    if (currentExperimentalTrialIndex == 16)
-                    {
-                        int targetFloor = currentFloor == 0 ? 1 : 0;
-
-                        // Start vertical movement and pass the panel to spawn after lift
-                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
-                    }
-                }
-                else if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225))
-                {
-                    if (currentExperimentalTrialIndex == 12)
+                    if (currentExperimentalTrialIndex == 8)
                     {
                         int targetFloor = currentFloor == 0 ? 1 : 0;
 
@@ -1423,33 +1916,56 @@ public class EventManager : MonoBehaviour
                 }
                 break;
 
-            case 4:
-                if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
-                {
-                    if (currentExperimentalTrialIndex == 12)
-                    {
-                        int targetFloor = currentFloor == 0 ? 1 : 0;
+            //case 3:
+            //    if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
+            //    {
+            //        if (currentExperimentalTrialIndex == 16)
+            //        {
+            //            int targetFloor = currentFloor == 0 ? 1 : 0;
 
-                        // Start vertical movement and pass the panel to spawn after lift
-                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
-                    }
-                }
-                else if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225))
-                {
-                    if (currentExperimentalTrialIndex == 9)
-                    {
-                        int targetFloor = currentFloor == 0 ? 1 : 0;
+            //            // Start vertical movement and pass the panel to spawn after lift
+            //            StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+            //        }
+            //    }
+            //    else if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225))
+            //    {
+            //        if (currentExperimentalTrialIndex == 12)
+            //        {
+            //            int targetFloor = currentFloor == 0 ? 1 : 0;
 
-                        // Start vertical movement and pass the panel to spawn after lift
-                        StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
-                    }
-                }
-                break;
+            //            // Start vertical movement and pass the panel to spawn after lift
+            //            StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+            //        }
+            //    }
+            //    break;
+
+            //case 4:
+            //    if ((startingPoint == 0 && learningDirection == 225) || (startingPoint == 1 && learningDirection == 0))
+            //    {
+            //        if (currentExperimentalTrialIndex == 12)
+            //        {
+            //            int targetFloor = currentFloor == 0 ? 1 : 0;
+
+            //            // Start vertical movement and pass the panel to spawn after lift
+            //            StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+            //        }
+            //    }
+            //    else if ((startingPoint == 0 && learningDirection == 0) || (startingPoint == 1 && learningDirection == 225))
+            //    {
+            //        if (currentExperimentalTrialIndex == 9)
+            //        {
+            //            int targetFloor = currentFloor == 0 ? 1 : 0;
+
+            //            // Start vertical movement and pass the panel to spawn after lift
+            //            StartCoroutine(MovePlayerVertically(targetFloor, panelTestTrialInstructor));
+            //        }
+            //    }
+            //    break;
         }     
 
         ExperimentalTrial trial = experimentalTrials[currentExperimentalTrialIndex];
 
-        if (trialType == 1 || trialType == 2)
+        if (trialType == 1)
         {
             if (sensorimotorAlignment == 90)
             {
@@ -1485,7 +2001,7 @@ public class EventManager : MonoBehaviour
                 }
             }
         }
-        else if (trialType == 3 || trialType == 4)
+        else if (trialType == 2)
         {
             if (sensorimotorAlignment == 90)
             {
@@ -1526,7 +2042,7 @@ public class EventManager : MonoBehaviour
 
     private void EndExperimentalSession()
     {
-        if (stage == 17)
+        if (stage == 12)
         {
             if (sensorimotorAlignment == 90)
             {
@@ -1587,21 +2103,26 @@ public class EventManager : MonoBehaviour
         // Imagined facing angle (vector of sensorimotor direction participant stands in)
         Vector3 partToImagine = Vector3.zero;
 
-        if (sensorimotorAlignment == 90)
-        {
-            Vector3 imaginedFacing = sensorimotorObject90.position;
-            partToImagine = imaginedFacing - participantPos;
-        }
-        else if (sensorimotorAlignment == 225)
-        {
-            Vector3 imaginedFacing = sensorimotorObject225.position;
-            partToImagine = imaginedFacing - participantPos;
-        }
-        else if (sensorimotorAlignment == 315)
-        {
-            Vector3 imaginedFacing = sensorimotorObject315.position;
-            partToImagine = imaginedFacing - participantPos;
-        }
+        GameObject sensorimotorAlignedObject = GetSensorimotorObject();
+
+        Vector3 imaginedFacing = sensorimotorAlignedObject.transform.position;
+        partToImagine = imaginedFacing - participantPos;
+
+        //if (sensorimotorAlignment == 90 && !secondCondition)
+        //{
+        //    Vector3 imaginedFacing = sensorimotorObject90.transform.position;
+        //    partToImagine = imaginedFacing - participantPos;
+        //}
+        //else if (sensorimotorAlignment == 225 && !secondCondition)
+        //{
+        //    Vector3 imaginedFacing = sensorimotorObject225.transform.position;
+        //    partToImagine = imaginedFacing - participantPos;
+        //}
+        //else if (sensorimotorAlignment == 315 && !secondCondition)
+        //{
+        //    Vector3 imaginedFacing = sensorimotorObject315.transform.position;
+        //    partToImagine = imaginedFacing - participantPos;
+        //}
 
         //horizontal facing angle (starting from X-positive axis, incresing angle with counter clock-wise (0-360))
         Vector3 partToFace = facingPos - participantPos;
@@ -1664,7 +2185,7 @@ public class EventManager : MonoBehaviour
         float verticalErrorAbs = Mathf.Abs(verticalErrorSigned);
 
         // ---- DEBUG --- Log the errors for stages 9, 11, 14, 16 ---
-        if (stage == 9 || stage == 11 || stage == 14 || stage == 16)
+        if (stage == 9 || stage == 11) //|| stage == 14 || stage == 16)
         {
             Debug.Log($"Trial {trialNumber}: horizErrorSigned = {horizErrorSigned}, horizErrorAbs = {horizErrorAbs}, vertErrorSigned = {verticalErrorSigned}, vertErrorAbs = {verticalErrorAbs}, latency = {pointingLatency}");
         }
@@ -2132,9 +2653,9 @@ public class EventManager : MonoBehaviour
         }
     }
 
-    private void TestAlignedTrials()
+    private void TestAlignedTrials(List<GameObject> objects)
     {
-        List<ExperimentalTrial> alignedTrials = GenerateExperimentalAlignedTrials(objectsFirst);
+        List<ExperimentalTrial> alignedTrials = GenerateAlignedTrials(objects);
 
         for (int i = 0; i < alignedTrials.Count; i++)
         {
@@ -2142,9 +2663,10 @@ public class EventManager : MonoBehaviour
             Debug.Log($"Trial {i + 1}: Facing {t.facingObject.name} -> Pointing {t.pointingObject.name} (Type: {t.trialType})");
         }
     }
-    private void TestMisalignedTrials()
+
+    private void TestMisalignedTrials(List<GameObject> objects)
     {
-        List<ExperimentalTrial> misalignedTrials = GenerateExperimentalMisalignedTrials(objectsFirst);
+        List<ExperimentalTrial> misalignedTrials = GenerateMisalignedSemiMisalignedTrials(objects);
 
         for (int i = 0; i < misalignedTrials.Count; i++)
         {
@@ -2152,9 +2674,9 @@ public class EventManager : MonoBehaviour
             Debug.Log($"Trial {i + 1}: Facing {t.facingObject.name} -> Pointing {t.pointingObject.name} (Type: {t.trialType})");
         }
     }
-    private void TestSemiAlignedTrials()
+    private void TestSemiAlignedTrials(List<GameObject> objects)
     {
-        List<ExperimentalTrial> semialignedTrials = GenerateExperimentalSemiAlignedTrials(objectsFirst);
+        List<ExperimentalTrial> semialignedTrials = GenerateAlignedSemiAlignedTrials(objects);
 
         for (int i = 0; i < semialignedTrials.Count; i++)
         {
@@ -2162,9 +2684,9 @@ public class EventManager : MonoBehaviour
             Debug.Log($"Trial {i + 1}: Facing {t.facingObject.name} -> Pointing {t.pointingObject.name} (Type: {t.trialType})");
         }
     }
-    private void TestSemiMisalignedTrials()
+    private void TestSemiMisalignedTrials(List<GameObject> objects)
     {
-        List<ExperimentalTrial> semiMisalignedTrials = GenerateExperimentalSemiMisalignedTrials(objectsFirst);
+        List<ExperimentalTrial> semiMisalignedTrials = GenerateSemiMisalignedTrials(objects);
 
         for (int i = 0; i < semiMisalignedTrials.Count; i++)
         {

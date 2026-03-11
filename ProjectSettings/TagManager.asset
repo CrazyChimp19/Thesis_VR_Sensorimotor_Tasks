@@ -9,6 +9,7 @@ TagManager:
   - Top
   - Transparent
   - Stand
+  - StandB
   layers:
   - Default
   - TransparentFX
